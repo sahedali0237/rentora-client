@@ -7,10 +7,10 @@ import Link from "next/link";
 
 // 1. Define the navigation links in a constant array
 const navLinks = [
-  { name: "Home", href: "#home" },
-  { name: "All Equipment", href: "#equipment" },
-  { name: "How It Works", href: "#how-it-works" },
-  { name: "Contact", href: "#contact" },
+  { name: "Home", href: "/" },
+  { name: "All Equipment", href: "/equipment" },
+  { name: "How It Works", href: "/how-it-works" },
+  { name: "Contact", href: "/contact" },
 ];
 
 const Navbar = () => {
