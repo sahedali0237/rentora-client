@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import ThemeToggle from "@/components/theme-toggle";
 
 // 1. Define the navigation links in a constant array
 const navLinks = [
@@ -51,8 +52,9 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Right: Desktop Auth Buttons */}
+          {/* Right: Desktop Theme Toggle + Auth Buttons */}
           <div className="hidden lg:flex items-center gap-4">
+            <ThemeToggle />
             <Link
               href="/sign-in"
               className="font-medium text-gray-900 dark:text-white hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 active:scale-95 px-4 py-2 rounded-md transition-all duration-200"
@@ -67,8 +69,9 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Mobile Hamburger Menu Toggle */}
-          <div className="flex items-center lg:hidden">
+          {/* Mobile: Theme Toggle + Hamburger Menu Toggle */}
+          <div className="flex items-center gap-1 lg:hidden">
+            <ThemeToggle />
             <button
               onClick={toggleMenu}
               className="text-gray-900 dark:text-white hover:text-[#fdb03d] dark:hover:text-gray-300 focus:outline-none p-2 transition-colors"
