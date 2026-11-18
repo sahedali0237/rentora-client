@@ -52,7 +52,6 @@ const Navbar = () => {
           </div>
 
           {/* Right: Desktop Auth Buttons */}
-          {/* Right: Desktop Auth Buttons */}
           <div className="hidden lg:flex items-center gap-4">
             <Link
               href="/sign-in"
@@ -60,9 +59,12 @@ const Navbar = () => {
             >
               Login
             </Link>
-            <button className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-gray-900 font-semibold px-6 py-2 rounded-md active:scale-95 transition-all duration-200 shadow-sm">
+            <Link
+              href="/sign-up"
+              className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-gray-900 font-semibold px-6 py-2 rounded-md active:scale-95 transition-all duration-200 shadow-sm"
+            >
               Register
-            </button>
+            </Link>
           </div>
 
           {/* Mobile Hamburger Menu Toggle */}
@@ -111,7 +113,7 @@ const Navbar = () => {
               Login
             </Link>
             <Link
-              href="/register"
+              href="/sign-up"
               className="w-full bg-[#fdb03d] hover:bg-[#e09b35] text-black font-semibold py-2 rounded-md transition-colors shadow-sm"
             >
               Register
