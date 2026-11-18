@@ -16,6 +16,7 @@ export default async function ProfilePage() {
         title="Profile"
         initialName={session.user.name ?? ""}
         initialEmail={session.user.email ?? ""}
+        initialImage={session.user.image ?? undefined}
       />
     </DashboardLayout>
   );

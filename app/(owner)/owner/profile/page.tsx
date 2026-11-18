@@ -13,8 +13,10 @@ export default async function ProfilePage() {
   return (
     <DashboardLayout role={role} userName={session.user.name} userEmail={session.user.email}>
       <ProfileForm
+        title="Profile"
         initialName={session.user.name ?? ""}
         initialEmail={session.user.email ?? ""}
+        initialImage={session.user.image ?? undefined}
       />
     </DashboardLayout>
   );
