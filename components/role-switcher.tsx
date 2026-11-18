@@ -13,6 +13,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -57,13 +58,13 @@ export default function RoleSwitcher({ user }: { user: RoleSwitcherUser }) {
 
   const isAdmin = user.roles.includes("admin");
   const isOwner = user.roles.includes("owner");
-  const isRenter = user.roles.includes("renter");
   const activeRole = isAdmin ? "admin" : user.activeRole === "owner" && isOwner ? "owner" : "renter";
   const isAdminActive = activeRole === "admin";
   // Owner-only users keep the owner dashboard without a renter option.
   const canChooseOwner = !isAdminActive && (!isOwner || activeRole !== "owner");
-  const canSwitchToRenter =
-    !isAdminActive && isRenter && activeRole !== "renter";
+  // "Renter" is the default role every account starts with, so any
+  // non-admin user who is currently in Owner mode can switch back to Renter.
+  const canSwitchToRenter = !isAdminActive && activeRole !== "renter";
 
   const badge = isAdminActive
     ? "Admin mode"
@@ -156,14 +157,16 @@ export default function RoleSwitcher({ user }: { user: RoleSwitcherUser }) {
         {initials(user.name)}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
-        <DropdownMenuLabel className="normal-case">
-          <span className="block truncate text-sm font-medium text-gray-900 dark:text-white">
-            {user.name}
-          </span>
-          <span className="block truncate text-xs font-normal text-zinc-500 dark:text-zinc-400">
-            {user.email}
-          </span>
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="normal-case">
+            <span className="block truncate text-sm font-medium text-gray-900 dark:text-white">
+              {user.name}
+            </span>
+            <span className="block truncate text-xs font-normal text-zinc-500 dark:text-zinc-400">
+              {user.email}
+            </span>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
 
         <div className="px-1.5 pb-1">
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">

@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local tooling / skill assets that are not part of the app:
+    ".opencode/**",
+    "ui-ux-pro-max-skill/**",
   ]),
 ]);
 

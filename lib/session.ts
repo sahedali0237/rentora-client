@@ -10,15 +10,11 @@ type FullSession = NonNullable<
 export type UserSession = FullSession;
 export type SessionUser = FullSession["user"];
 
-/**
- * Returns the user's active role with defensive normalization so legacy
- * accounts without the fields still resolve to "renter".
- */
 export function getActiveRole(user: Pick<SessionUser, "activeRole">): Role {
   return normalizeRole(user.activeRole);
 }
 
-/** Raw session lookup for the current request. Returns null when signed out. */
+
 export async function getSession(): Promise<UserSession | null> {
   return auth.api.getSession({ headers: await headers() });
 }
@@ -32,11 +28,6 @@ export async function requireUser(): Promise<UserSession> {
   return session;
 }
 
-/**
- * Requires a signed-in user whose activeRole matches the given role.
- * Mismatches are redirected to the dashboard of the user's active role,
- * so a renter poking at /owner lands on /renter and vice versa.
- */
 export async function requireRole(role: Role): Promise<UserSession> {
   const session = await requireUser();
   const activeRole = getActiveRole(session.user);

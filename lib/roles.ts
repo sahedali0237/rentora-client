@@ -17,11 +17,6 @@ export function getDashboardPath(role: Role): string {
   return DASHBOARD_PATH[role];
 }
 
-/**
- * Normalizes a persisted activeRole value to a known Role.
- * Accounts created before the roles rollout (or with corrupted data)
- * fall back to "renter".
- */
 export function normalizeRole(value: string | null | undefined): Role {
   return value === "owner" || value === "admin" ? value : "renter";
 }

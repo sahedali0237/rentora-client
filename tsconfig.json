@@ -32,5 +32,5 @@
     "app/(auth)/sign-up",
     "app/(auth)/sign-in"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "ui-ux-pro-max-skill"]
 }

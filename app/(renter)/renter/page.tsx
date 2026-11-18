@@ -1,69 +1,111 @@
-import { ExternalLink, PackageSearch, CreditCard, Star, Truck } from "lucide-react";
+import { DashboardLayout } from "@/components/dashboard-layout";
+import { StatCard } from "@/components/stat-card";
+import { PackageSearch, CreditCard, Star, Truck, Clock } from "lucide-react";
+import { getSession, getActiveRole } from "@/lib/session";
+import { apiFetch } from "@/lib/api-fetch";
+import type { ApiBooking } from "@/lib/api-types";
 
-const features = [
-  {
-    icon: PackageSearch,
-    title: "Find Equipment",
-    description:
-      "Browse the marketplace and search for the gear you need by category, price and availability.",
-  },
-  {
-    icon: CreditCard,
-    title: "Book & Pay",
-    description:
-      "Pick your rental period, book the item and pay securely online.",
-  },
-  {
-    icon: Star,
-    title: "Review",
-    description:
-      "Rate owners and leave reviews after each completed rental.",
-  },
-  {
-    icon: Truck,
-    title: "Track Rentals",
-    description:
-      "Follow your active bookings from confirmation to return.",
-  },
-];
+export const instant = false;
 
-export default function RenterDashboardPage() {
+async function getRenterStats(userId: string) {
+  const res = await apiFetch("/api/bookings");
+  const data = await res.json();
+
+  const bookings: ApiBooking[] = (data.bookings || []).filter(
+    (b: ApiBooking) => b.renterId === userId,
+  );
+
+  const totalRentals = bookings.length;
+  const activeRentals = bookings.filter((b) => b.status === "active" || b.status === "pending").length;
+  const completedRentals = bookings.filter((b) => b.status === "completed").length;
+  const totalSpent = bookings
+    .filter((b) => b.paymentStatus === "paid")
+    .reduce((sum: number, b) => sum + (Number(b.amount) || 0), 0);
+
+  return { totalRentals, activeRentals, completedRentals, totalSpent };
+}
+
+export default async function RenterDashboardPage() {
+  const session = await getSession();
+  if (!session) return null;
+
+  const role = getActiveRole(session.user);
+  const stats = await getRenterStats(session.user.id);
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <header className="mb-10">
-        <p className="text-sm font-medium uppercase tracking-wide text-amber-500">
-          Renter Dashboard
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
-          Find Equipment, Book, Pay, Review, Track Rentals
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-zinc-500 dark:text-zinc-400">
-          Everything you need as a renter on Rentora. Switch to Owner mode any
-          time from the avatar menu to list your own equipment.
-        </p>
-      </header>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        {features.map((feature) => (
-          <div
-            key={feature.title}
-            className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-          >
-            <feature.icon className="h-5 w-5 text-amber-500" aria-hidden />
-            <h2 className="mt-3 text-base font-semibold text-gray-900 dark:text-white">
-              {feature.title}
-            </h2>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              {feature.description}
+    <DashboardLayout role={role} userName={session.user.name} userEmail={session.user.email}>
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Renter Overview</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Browse equipment, track your rentals, and manage your favorites.
             </p>
           </div>
-        ))}
-      </div>
+        </div>
 
-      <p className="mt-10 flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-500">
-        Placeholder dashboard — feature pages are on the way.
-        <ExternalLink className="h-3 w-3" aria-hidden />
-      </p>
-    </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Rentals"
+            value={stats.totalRentals}
+            subtitle="Bookings placed"
+            icon={PackageSearch}
+            color="blue"
+            trend={{ value: "+1 this month", positive: true }}
+          />
+          <StatCard
+            title="Active Rentals"
+            value={stats.activeRentals}
+            subtitle="Ongoing or pending"
+            icon={Truck}
+            color="emerald"
+            trend={{ value: "Up to date", positive: true }}
+          />
+          <StatCard
+            title="Completed Rentals"
+            value={stats.completedRentals}
+            subtitle="Successfully finished"
+            icon={Star}
+            color="rose"
+            trend={{ value: "+1 this month", positive: true }}
+          />
+          <StatCard
+            title="Total Spent"
+            value={`$${stats.totalSpent.toLocaleString()}`}
+            subtitle="On paid rentals"
+            icon={CreditCard}
+            color="amber"
+            trend={{ value: "All payments clear", positive: true }}
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <a
+            href="/renter/my-rentals"
+            className="rounded-xl border border-gray-200 bg-white p-6 hover:bg-gray-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-colors"
+          >
+            <CreditCard className="mb-3 h-6 w-6 text-gray-400" aria-hidden />
+            <h3 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">My Rentals</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Track your active bookings</p>
+          </a>
+          <a
+            href="/renter/favorites"
+            className="rounded-xl border border-gray-200 bg-white p-6 hover:bg-gray-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-colors"
+          >
+            <Star className="mb-3 h-6 w-6 text-gray-400" aria-hidden />
+            <h3 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">Favorites</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Your saved equipment</p>
+          </a>
+          <a
+            href="/renter/profile"
+            className="rounded-xl border border-gray-200 bg-white p-6 hover:bg-gray-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-colors"
+          >
+            <Clock className="mb-3 h-6 w-6 text-gray-400" aria-hidden />
+            <h3 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">Profile</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Update your information</p>
+          </a>
+        </div>
+      </div>
+    </DashboardLayout>
   );
 }

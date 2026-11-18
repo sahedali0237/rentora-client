@@ -29,9 +29,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {/* Apply the saved theme before paint to avoid a flash of the wrong theme.
-            Per Next.js docs, beforeInteractive scripts live inside <body> of the root layout
-            and are injected into <head> server-side, running before hydration. */}
         <Script
           id="theme-init"
           strategy="beforeInteractive"

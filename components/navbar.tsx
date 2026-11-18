@@ -85,15 +85,20 @@ const Navbar = () => {
             {isPending ? (
               <div className="h-9 w-9 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
             ) : user && activeRole ? (
-              <RoleSwitcher
-                user={{
-                  name: user.name,
-                  email: user.email,
-                  image: user.image ?? null,
-                  roles: Array.isArray(user.roles) ? user.roles : [],
-                  activeRole: activeRole,
-                }}
-              />
+              <>
+                <RoleSwitcher
+                  user={{
+                    name: user.name,
+                    email: user.email,
+                    image: user.image ?? null,
+                    roles: Array.isArray(user.roles) ? user.roles : [],
+                    activeRole: activeRole,
+                  }}
+                />
+                <span className="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap ml-2">
+                  Hi! {user.name}
+                </span>
+              </>
             ) : (
               <>
                 <Link
@@ -170,6 +175,9 @@ const Navbar = () => {
                     activeRole: activeRole,
                   }}
                 />
+                <span className="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap mt-2">
+                  Hi! {user.name}
+                </span>
               </>
             ) : (
               <>

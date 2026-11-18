@@ -55,9 +55,21 @@ export async function POST(request: Request) {
   }
 
   const currentRoles = Array.isArray(user.roles) ? user.roles : [];
-  if (!currentRoles.includes(role)) {
+  const isAdmin = currentRoles.includes("admin");
+
+  // "admin" can never be selected as an active role (handled above).
+  // "renter" is the default role every account starts with, so any
+  // non-admin user can switch into Renter mode. "owner" is a granted
+  // privilege and must already be present on the account.
+  if (role === "owner" && !currentRoles.includes("owner")) {
     return NextResponse.json(
-      { success: false, error: `You do not have the "${role}" role.` },
+      { success: false, error: 'You do not have the "owner" role.' },
+      { status: 403 },
+    );
+  }
+  if (role === "renter" && isAdmin) {
+    return NextResponse.json(
+      { success: false, error: "Admin accounts cannot switch to Renter mode." },
       { status: 403 },
     );
   }
