@@ -62,17 +62,18 @@ export function DataTable<T extends Record<string, unknown>>({
         </TableHeader>
         <TableBody>
           {data.map((row, rowIndex) => (
-            <TableRow key={rowIndex} className="border-b border-gray-100 dark:border-zinc-800/50 last:border-0">
+            <TableRow
+              key={rowIndex}
+              className="border-b border-gray-100 dark:border-zinc-800/50 last:border-0"
+            >
               {columns.map((col) => (
                 <TableCell
                   key={col.key}
                   className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300"
                 >
-                  {cellRenderer ? (
-                    cellRenderer(col.key, row[col.key], row)
-                  ) : (
-                    String(row[col.key] ?? "-")
-                  )}
+                  {cellRenderer
+                    ? cellRenderer(col.key, row[col.key], row)
+                    : String(row[col.key] ?? "-")}
                 </TableCell>
               ))}
             </TableRow>
@@ -83,13 +84,5 @@ export function DataTable<T extends Record<string, unknown>>({
   );
 }
 
-// Re-export shadcn table primitives for consumers who want full control
-export {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-};
+export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow };
 export type { Column };
