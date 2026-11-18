@@ -54,9 +54,12 @@ const Navbar = () => {
           {/* Right: Desktop Auth Buttons */}
           {/* Right: Desktop Auth Buttons */}
           <div className="hidden lg:flex items-center gap-4">
-            <button className="font-medium text-gray-900 dark:text-white hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 active:scale-95 px-4 py-2 rounded-md transition-all duration-200">
+            <Link
+              href="/sign-in"
+              className="font-medium text-gray-900 dark:text-white hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 active:scale-95 px-4 py-2 rounded-md transition-all duration-200"
+            >
               Login
-            </button>
+            </Link>
             <button className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-gray-900 font-semibold px-6 py-2 rounded-md active:scale-95 transition-all duration-200 shadow-sm">
               Register
             </button>
@@ -101,12 +104,18 @@ const Navbar = () => {
           ))}
 
           <div className="flex flex-col items-center gap-4 w-full mt-2 px-6">
-            <button className="w-full font-medium hover:text-[#fdb03d] dark:hover:text-gray-300 border border-gray-300 dark:border-white/20 py-2 rounded-md transition-colors">
+            <Link
+              href="/sign-in"
+              className="w-full font-medium hover:text-[#fdb03d] dark:hover:text-gray-300 border border-gray-300 dark:border-white/20 py-2 rounded-md transition-colors"
+            >
               Login
-            </button>
-            <button className="w-full bg-[#fdb03d] hover:bg-[#e09b35] text-black font-semibold py-2 rounded-md transition-colors shadow-sm">
+            </Link>
+            <Link
+              href="/register"
+              className="w-full bg-[#fdb03d] hover:bg-[#e09b35] text-black font-semibold py-2 rounded-md transition-colors shadow-sm"
+            >
               Register
-            </button>
+            </Link>
           </div>
         </div>
       </div>
