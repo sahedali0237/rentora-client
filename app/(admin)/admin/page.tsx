@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { StatCard } from "@/components/stat-card";
 import {
@@ -13,6 +14,10 @@ import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
 import type { ApiBooking, ApiEquipment, ApiUser } from "@/lib/api-types";
 import { EarningsChart } from "@/components/earnings-chart";
+
+// Cache Components: the signed-in check uses headers()/sessions, so this
+// segment must be a blocking route.
+export const instant = false;
 
 async function getStats() {
   const usersRes = await apiFetch("/api/admin/users");
@@ -58,7 +63,23 @@ async function getStats() {
   };
 }
 
-export default async function AdminDashboardPage() {
+function AdminDashboardSkeleton() {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+    </div>
+  );
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <Suspense fallback={<AdminDashboardSkeleton />}>
+      <AdminDashboard />
+    </Suspense>
+  );
+}
+
+async function AdminDashboard() {
   const session = await getSession();
   if (!session) return null;
 

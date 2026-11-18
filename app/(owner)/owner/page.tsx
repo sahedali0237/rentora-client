@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { StatCard } from "@/components/stat-card";
 import { ListPlus, Package, Truck, DollarSign, Users } from "lucide-react";
@@ -6,7 +7,27 @@ import { apiFetch } from "@/lib/api-fetch";
 import type { ApiBooking, ApiEquipment } from "@/lib/api-types";
 import { EarningsChart } from "@/components/earnings-chart";
 
-export default async function OwnerDashboardPage() {
+// Cache Components: the signed-in check uses headers()/sessions, so this
+// segment must be a blocking route.
+export const instant = false;
+
+function OwnerDashboardSkeleton() {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+    </div>
+  );
+}
+
+export default function OwnerDashboardPage() {
+  return (
+    <Suspense fallback={<OwnerDashboardSkeleton />}>
+      <OwnerDashboard />
+    </Suspense>
+  );
+}
+
+async function OwnerDashboard() {
   const session = await getSession();
   if (!session) return null;
 
