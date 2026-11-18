@@ -1,5 +1,27 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Roles & Dashboards
+
+Every account has a `roles` array and an `activeRole` (both managed by Better Auth `additionalFields`):
+
+| Role  | Dashboard | Notes |
+| ----- | --------- | ----- |
+| `renter` | `/renter` | Default on sign-up. Find, book and pay for equipment. |
+| `owner`  | `/owner`  | Added via "Become an Owner". List equipment, manage bookings, earnings. |
+| `admin`  | `/admin`  | Separate role; cannot be self-assigned or switched to (see below). |
+
+A single account can hold both `renter` and `owner` and switch modes from the avatar menu in the navbar (Fiverr-style). Authorization is enforced on the server: each dashboard layout calls `requireRole(...)` and the API routes validate the session, so hiding UI is cosmetic only.
+
+### Creating an admin
+
+There is no public endpoint that creates admins. Use the script from the project root (Node 22.6+ runs TypeScript natively):
+
+```bash
+node scripts/make-admin.ts admin@example.com
+```
+
+The script sets `roles: ["admin"]`, `activeRole: "admin"` for that user. It reads `MONGODB_URI` from the environment or from `.env.local` / `.env`. The user must have signed up at least once, and must sign out and back in after promotion.
+
 ## Getting Started
 
 First, run the development server:

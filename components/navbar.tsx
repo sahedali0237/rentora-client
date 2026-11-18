@@ -5,17 +5,44 @@ import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import ThemeToggle from "@/components/theme-toggle";
+import RoleSwitcher from "@/components/role-switcher";
+import { authClient } from "@/lib/auth-client";
+import { normalizeRole, type Role } from "@/lib/roles";
 
-// 1. Define the navigation links in a constant array
-const navLinks = [
+// Role-specific navigation links. Renter mode promotes browsing the
+// marketplace; owner mode promotes the owner workspace.
+const RENTER_LINKS = [
   { name: "Home", href: "/" },
   { name: "All Equipment", href: "/equipment" },
   { name: "How It Works", href: "/how-it-works" },
   { name: "Contact", href: "/contact" },
 ];
 
+const OWNER_LINKS = [
+  { name: "Home", href: "/" },
+  { name: "Dashboard", href: "/owner" },
+  { name: "How It Works", href: "/how-it-works" },
+  { name: "Contact", href: "/contact" },
+];
+
+const ADMIN_LINKS = [
+  { name: "Home", href: "/" },
+  { name: "Admin", href: "/admin" },
+];
+
+function linksForRole(role: Role) {
+  if (role === "owner") return OWNER_LINKS;
+  if (role === "admin") return ADMIN_LINKS;
+  return RENTER_LINKS;
+}
+
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { data: session, isPending } = authClient.useSession();
+
+  const user = session?.user;
+  const activeRole: Role | null = user ? normalizeRole(user.activeRole) : null;
+  const navLinks = activeRole ? linksForRole(activeRole) : RENTER_LINKS;
 
   const toggleMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -52,21 +79,37 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Right: Desktop Theme Toggle + Auth Buttons */}
+          {/* Right: Desktop Theme Toggle + Auth Buttons / Avatar Menu */}
           <div className="hidden lg:flex items-center gap-4">
             <ThemeToggle />
-            <Link
-              href="/sign-in"
-              className="font-medium text-gray-900 dark:text-white hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 active:scale-95 px-4 py-2 rounded-md transition-all duration-200"
-            >
-              Login
-            </Link>
-            <Link
-              href="/sign-up"
-              className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-gray-900 font-semibold px-6 py-2 rounded-md active:scale-95 transition-all duration-200 shadow-sm"
-            >
-              Register
-            </Link>
+            {isPending ? (
+              <div className="h-9 w-9 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+            ) : user && activeRole ? (
+              <RoleSwitcher
+                user={{
+                  name: user.name,
+                  email: user.email,
+                  image: user.image ?? null,
+                  roles: Array.isArray(user.roles) ? user.roles : [],
+                  activeRole: activeRole,
+                }}
+              />
+            ) : (
+              <>
+                <Link
+                  href="/sign-in"
+                  className="font-medium text-gray-900 dark:text-white hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 active:scale-95 px-4 py-2 rounded-md transition-all duration-200"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-gray-900 font-semibold px-6 py-2 rounded-md active:scale-95 transition-all duration-200 shadow-sm"
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile: Theme Toggle + Hamburger Menu Toggle */}
@@ -109,18 +152,41 @@ const Navbar = () => {
           ))}
 
           <div className="flex flex-col items-center gap-4 w-full mt-2 px-6">
-            <Link
-              href="/sign-in"
-              className="w-full font-medium hover:text-[#fdb03d] dark:hover:text-gray-300 border border-gray-300 dark:border-white/20 py-2 rounded-md transition-colors"
-            >
-              Login
-            </Link>
-            <Link
-              href="/sign-up"
-              className="w-full bg-[#fdb03d] hover:bg-[#e09b35] text-black font-semibold py-2 rounded-md transition-colors shadow-sm"
-            >
-              Register
-            </Link>
+            {isPending ? null : user && activeRole ? (
+              <>
+                <Link
+                  href={activeRole === "admin" ? "/admin" : `/${activeRole}`}
+                  onClick={toggleMenu}
+                  className="w-full text-center font-medium hover:text-[#fdb03d] dark:hover:text-gray-300 border border-gray-300 dark:border-white/20 py-2 rounded-md transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <RoleSwitcher
+                  user={{
+                    name: user.name,
+                    email: user.email,
+                    image: user.image ?? null,
+                    roles: Array.isArray(user.roles) ? user.roles : [],
+                    activeRole: activeRole,
+                  }}
+                />
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/sign-in"
+                  className="w-full font-medium hover:text-[#fdb03d] dark:hover:text-gray-300 border border-gray-300 dark:border-white/20 py-2 rounded-md transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="w-full bg-[#fdb03d] hover:bg-[#e09b35] text-black font-semibold py-2 rounded-md transition-colors shadow-sm"
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

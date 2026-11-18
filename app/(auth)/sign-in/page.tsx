@@ -38,9 +38,9 @@ export default function SignInPage() {
       }
 
       toast.success("Welcome back!");
-      // Redirect to home page after a short delay so the toast is visible
+      // Redirect to the role dashboard after a short delay so the toast is visible
       setTimeout(() => {
-        window.location.href = "/";
+        window.location.href = "/dashboard";
       }, 1500);
     } catch (err: unknown) {
       const message =

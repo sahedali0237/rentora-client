@@ -1,11 +1,25 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
 
-export default function AuthLayout({
+// Cache Components: the signed-in check uses headers()/sessions, so this
+// segment must be a blocking route.
+export const instant = false;
+
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Signed-in users never see the auth pages; send them to their dashboard.
+  // (A real session check here avoids redirect loops that an optimistic
+  // cookie check in proxy.ts could cause with stale cookies.)
+  const session = await getSession();
+  if (session) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-zinc-950">
       <div className="hidden lg:flex relative flex-col justify-between p-12 overflow-hidden border-r border-zinc-800">
