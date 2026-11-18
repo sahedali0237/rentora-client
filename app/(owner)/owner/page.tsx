@@ -4,7 +4,7 @@ import { ListPlus, Package, Truck, DollarSign, Users } from "lucide-react";
 import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
 import type { ApiBooking, ApiEquipment } from "@/lib/api-types";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { EarningsChart } from "@/components/earnings-chart";
 
 export default async function OwnerDashboardPage() {
   const session = await getSession();
@@ -96,21 +96,7 @@ export default async function OwnerDashboardPage() {
             Monthly Earnings
           </h2>
           <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthly}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} className="dark:stroke-zinc-800/50" />
-                <XAxis dataKey="month" className="dark:text-gray-400" />
-                <YAxis className="dark:text-gray-400" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    borderColor: "var(--border)",
-                    color: "var(--foreground)",
-                  }}
-                />
-                <Bar dataKey="earnings" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <EarningsChart data={monthly} dataKey="earnings" />
           </div>
         </div>
 

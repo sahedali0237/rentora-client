@@ -12,7 +12,7 @@ import {
 import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
 import type { ApiBooking, ApiEquipment, ApiUser } from "@/lib/api-types";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { EarningsChart } from "@/components/earnings-chart";
 
 async function getStats() {
   const usersRes = await apiFetch("/api/admin/users");
@@ -117,21 +117,7 @@ export default async function AdminDashboardPage() {
             Monthly Booking Statistics
           </h2>
           <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.monthly}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} className="dark:stroke-zinc-800/50" />
-                <XAxis dataKey="month" className="dark:text-gray-400" />
-                <YAxis className="dark:text-gray-400" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    borderColor: "var(--border)",
-                    color: "var(--foreground)",
-                  }}
-                />
-                <Bar dataKey="bookings" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <EarningsChart data={stats.monthly} dataKey="bookings" />
           </div>
         </div>
 
