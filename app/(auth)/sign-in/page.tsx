@@ -2,12 +2,64 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "react-toastify";
+import { authClient } from "@/lib/auth-client";
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const email = (formData.get("email") as string).trim();
+    const password = formData.get("password") as string;
+
+    if (!email || !password) {
+      setError("Email and password are required.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error: signInError } = await authClient.signIn.email({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(signInError.message || "Sign in failed. Please try again.");
+        toast.error(signInError.message || "Sign in failed.");
+        return;
+      }
+
+      toast.success("Welcome back!");
+      // Redirect to home page after a short delay so the toast is visible
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1500);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "An unexpected error occurred.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col space-y-6">
+      {error && (
+        <div className="w-full px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+          {error}
+        </div>
+      )}
+
       <div className="flex flex-col space-y-2 text-center lg:text-left">
         <h1 className="text-3xl font-semibold tracking-tight text-white">
           Welcome back
@@ -17,17 +69,19 @@ export default function SignInPage() {
         </p>
       </div>
 
-      <form className="flex flex-col space-y-4">
+      <form onSubmit={handleSignIn} className="flex flex-col space-y-4">
         <div className="space-y-1">
           <label className="text-sm font-medium text-zinc-300" htmlFor="email">
             Email
           </label>
           <input
             id="email"
+            name="email"
             type="email"
             placeholder="name@example.com"
             className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
             required
+            autoComplete="email"
           />
         </div>
         <div className="space-y-1 relative">
@@ -48,10 +102,12 @@ export default function SignInPage() {
           <div className="relative">
             <input
               id="password"
+              name="password"
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               className="w-full px-3 py-2 pr-10 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
               required
+              autoComplete="current-password"
             />
             <button
               type="button"
@@ -102,9 +158,10 @@ export default function SignInPage() {
 
         <button
           type="submit"
-          className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:shadow-[0_0_20px_rgba(37,99,235,0.5)]"
+          disabled={loading}
+          className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:shadow-[0_0_20px_rgba(37,99,235,0.5)] disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Sign In
+          {loading ? "Signing in..." : "Sign In"}
         </button>
       </form>
 
