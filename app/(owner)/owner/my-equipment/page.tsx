@@ -15,6 +15,7 @@ type EquipmentRow = {
   quantity: string;
   status: string;
   id: string;
+  ownerEmail: string;
 };
 
 export default async function MyEquipmentPage() {
@@ -23,18 +24,17 @@ export default async function MyEquipmentPage() {
 
   const role = getActiveRole(session.user);
 
-  const res = await apiFetch("/api/equipment");
+  const res = await apiFetch("/api/equipment?mine=true");
   const data = await res.json();
-  const equipment: EquipmentRow[] = (data.equipment || [])
-    .filter((e: ApiEquipment) => e.ownerId === session.user.id)
-    .map((e: ApiEquipment) => ({
-      name: e.name || "Untitled",
-      category: e.category || "Uncategorized",
-      price: `$${e.rentalPrice ?? e.price ?? 0}`,
-      quantity: String(e.availableQuantity || 0),
-      status: e.status || "pending",
-      id: e._id || e.id || "",
-    }));
+  const equipment: EquipmentRow[] = (data.equipment || []).map((e: ApiEquipment) => ({
+    name: e.name || "Untitled",
+    category: e.category || "Uncategorized",
+    price: `$${e.rentalPrice ?? e.price ?? 0}`,
+    quantity: String(e.availableQuantity || 0),
+    status: e.status || "pending",
+    id: e._id || e.id || "",
+    ownerEmail: e.ownerEmail || "",
+  }));
 
   const columns = [
     { key: "name", label: "Equipment" },
@@ -42,6 +42,7 @@ export default async function MyEquipmentPage() {
     { key: "price", label: "Price" },
     { key: "quantity", label: "Qty" },
     { key: "status", label: "Status" },
+    { key: "ownerEmail", label: "Owner Email" },
     { key: "action", label: "Actions" },
   ];
 
@@ -73,7 +74,7 @@ export default async function MyEquipmentPage() {
             }
             if (key === "action") {
               const e = value as EquipmentRow;
-              return <EquipmentActions id={e.id} status={e.status} label="Update" />;
+              return <EquipmentActions id={e.id} status={e.status} name={e.name} />;
             }
             return value as React.ReactNode;
           }}

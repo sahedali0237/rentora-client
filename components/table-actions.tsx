@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 const buttonClass =
   "text-xs px-3 py-1.5 rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-zinc-800 dark:bg-zinc-800 dark:text-gray-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
@@ -12,60 +15,89 @@ const dangerButtonClass =
 type EquipmentActionsProps = {
   id: string;
   status: string;
-  label?: string;
+  name?: string;
 };
 
-export function EquipmentActions({ id, status, label }: EquipmentActionsProps) {
+export function EquipmentActions({ id, status, name }: EquipmentActionsProps) {
   const [pending, setPending] = useState(false);
+  const [terminating, setTerminating] = useState(false);
+  const [terminateOpen, setTerminateOpen] = useState(false);
+  const router = useRouter();
 
-  const toggleStatus = async () => {
+  const isApproved = String(status).toLowerCase() === "approved";
+
+  const handleApprove = async () => {
+    if (isApproved) return;
     setPending(true);
     try {
-      const newStatus = status === "pending" ? "approved" : "pending";
       const res = await fetch("/api/equipment", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status: newStatus }),
+        body: JSON.stringify({ id, status: "approved" }),
       });
       if (res.ok) {
+        toast.success("Equipment approved.");
         window.location.reload();
       } else {
-        toast.error("Failed to update equipment status.");
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || "Failed to approve equipment.");
       }
     } catch {
-      toast.error("Failed to update equipment status.");
+      toast.error("Failed to approve equipment.");
     } finally {
       setPending(false);
     }
   };
 
-  const remove = async () => {
-    if (!confirm("Delete this equipment?")) return;
-    setPending(true);
+  const handleTerminate = async () => {
+    setTerminating(true);
     try {
       const res = await fetch(`/api/equipment?id=${encodeURIComponent(id)}`, {
         method: "DELETE",
       });
       if (res.ok) {
+        toast.success("Equipment terminated.");
+        setTerminateOpen(false);
         window.location.reload();
       } else {
-        toast.error("Failed to delete equipment.");
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || "Failed to terminate equipment.");
+        setTerminating(false);
       }
     } catch {
-      toast.error("Failed to delete equipment.");
-    } finally {
-      setPending(false);
+      toast.error("Failed to terminate equipment.");
+      setTerminating(false);
     }
   };
 
   return (
     <div className="flex items-center gap-2">
-      <button type="button" onClick={toggleStatus} disabled={pending} className={buttonClass}>
-        {label ?? (status === "pending" ? "Approve" : "Revert")}
+      <button
+        type="button"
+        onClick={handleApprove}
+        disabled={pending || isApproved}
+        className={buttonClass}
+      >
+        {isApproved ? "Approved" : "Approve"}
       </button>
-      <button type="button" onClick={remove} disabled={pending} className={dangerButtonClass}>
-        Delete
+      <button
+        type="button"
+        onClick={() => setTerminateOpen(true)}
+        disabled={terminating}
+        className={dangerButtonClass}
+      >
+        <Trash2 className="h-4 w-4" /> Terminate
       </button>
+      <ConfirmDialog
+        isOpen={terminateOpen}
+        onConfirm={handleTerminate}
+        onCancel={() => setTerminateOpen(false)}
+        title="Terminate Equipment"
+        equipmentName={name}
+        confirmLabel="Terminate"
+        cancelLabel="Cancel"
+        destructive
+      />
     </div>
   );
 }

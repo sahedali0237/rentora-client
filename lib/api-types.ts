@@ -23,6 +23,7 @@ export type ApiEquipment = {
   status?: string;
   ownerId?: string;
   ownerName?: string;
+  ownerEmail?: string;
   rating?: number;
   reviewCount?: number;
   createdAt?: string;

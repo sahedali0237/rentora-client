@@ -31,6 +31,25 @@ This repository uses Next.js 16.4.6 with the app router. APIs and conventions di
 ## Deployment
 - The app is configured for deployment on Vercel (see README). For local production testing, run `npm run start`.
 
+### Midnight auto-approval
+
+Every day at 12:00 AM (UTC), a scheduled job auto-approves all pending equipment listings.
+
+- **Endpoint:** `POST /api/equipment/auto-approve`
+- **Guard:** requires the `x-auto-approve-secret` header (or `?secret=` query param) to match the `AUTO_APPROVE_SECRET` environment variable.
+
+**Setup:**
+
+1. Add a new environment variable in the Vercel dashboard:
+   `AUTO_APPROVE_SECRET` = any strong random string (e.g. `openssl rand -hex 32`).
+2. Create a **Vercel Cron Job** (Vercel dashboard → Project → Functions → Cron Jobs → Add):
+   - **URL:** `https://<your-project>.vercel.app/api/equipment/auto-approve`
+   - **Method:** `POST`
+   - **Schedule:** `0 0 * * *` (every day at 00:00 UTC)
+   - **Header:** add `x-auto-approve-secret` = the value of `AUTO_APPROVE_SECRET`
+
+> The app is deployed to Vercel (see above); the cron job runs on Vercel's schedule and calls the protected endpoint. Without the matching secret the request returns `401`.
+
 ## Common Gotchas
 - The app uses the new Next.js 16 app router; avoid mixing pages router syntax.
 - Tailwind classes must be defined in `globals.css`; adding new utilities requires updating Tailwind config or using existing classes.

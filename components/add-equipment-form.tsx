@@ -53,8 +53,6 @@ const inputClass =
 const labelClass =
   "block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:5000";
-
 export function AddEquipmentForm() {
   const [form, setForm] = useState<EquipmentForm>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
@@ -133,8 +131,9 @@ export function AddEquipmentForm() {
   const handleSubmit = async (formData: EquipmentForm) => {
     setSubmitting(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/add-equipment`, {
+      const response = await fetch("/api/equipment", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

@@ -16,7 +16,24 @@ export async function GET(request: Request) {
   );
   const skip = (page - 1) * limit;
 
-  const filter: Record<string, unknown> = { status: { $regex: /^approved$/i } };
+  const mine = searchParams.get("mine");
+
+  const session = await auth.api.getSession({ headers: await headers() });
+  const isAdmin = session?.user ? getActiveRole(session.user) === "admin" : false;
+
+  const filter: Record<string, unknown> = {};
+
+  if (mine === "true") {
+    if (!session) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+    filter.ownerId = session.user.id;
+  } else if (!isAdmin) {
+    // Public / non-admin viewers only see approved listings.
+    filter.status = { $regex: /^approved$/i };
+  }
+  // Admins viewing All Equipment see every listing (pending, approved, rejected)
+  // so they can moderate them.
 
   const category = searchParams.get("category");
   if (category) {
@@ -115,6 +132,7 @@ export async function POST(request: Request) {
     ...data,
     ownerId: session.user.id,
     ownerName: session.user.name,
+    ownerEmail: session.user.email,
     status: "pending",
     createdAt: new Date(),
     updatedAt: new Date(),

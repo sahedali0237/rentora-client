@@ -1,11 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Star,
-  MapPin,
-  ChevronRight,
-} from "lucide-react";
+import { Star, MapPin, ChevronRight } from "lucide-react";
 import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
 import { DeleteButton } from "@/components/equipment-delete-button";
@@ -58,7 +54,9 @@ export default async function EquipmentDetailsPage({
   }
 
   const status = equipment.status || "pending";
-  const isAdmin = session?.user ? getActiveRole(session.user) === "admin" : false;
+  const isAdmin = session?.user
+    ? getActiveRole(session.user) === "admin"
+    : false;
 
   // Owners may view their own listings regardless of approval status;
   // admins can view any listing; everyone else only sees approved equipment.
@@ -92,7 +90,10 @@ export default async function EquipmentDetailsPage({
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <nav className="flex items-center gap-1 text-sm text-gray-500 dark:text-zinc-400 mb-6">
-        <Link href="/equipment" className="hover:text-amber-600 dark:hover:text-amber-400">
+        <Link
+          href="/equipment"
+          className="hover:text-amber-600 dark:hover:text-amber-400"
+        >
           All Equipment
         </Link>
         <ChevronRight className="h-4 w-4" />
@@ -104,7 +105,7 @@ export default async function EquipmentDetailsPage({
       <div className="lg:grid lg:grid-cols-12 gap-8">
         {/* Left: Image Gallery */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="relative h-[400px] rounded-2xl border border-gray-200 bg-gray-100 dark:border-zinc-800 dark:bg-zinc-900 overflow-hidden">
+          <div className="relative h-100 rounded-2xl border border-gray-200 bg-gray-100 dark:border-zinc-800 dark:bg-zinc-900 overflow-hidden">
             {equipment.img || equipment.image ? (
               <Image
                 fill
@@ -142,7 +143,9 @@ export default async function EquipmentDetailsPage({
             <div className="flex items-center gap-3">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
               <span className="text-xl font-semibold text-gray-900 dark:text-white">
-                {stats.averageRating ? Number(stats.averageRating).toFixed(1) : "0.0"}
+                {stats.averageRating
+                  ? Number(stats.averageRating).toFixed(1)
+                  : "0.0"}
               </span>
               <span className="text-sm text-gray-500 dark:text-zinc-500">
                 ({stats.totalReviews || 0} reviews)
@@ -174,11 +177,13 @@ export default async function EquipmentDetailsPage({
                 <p className="text-xs text-gray-500 dark:text-zinc-500 uppercase font-semibold tracking-wider">
                   Availability
                 </p>
-                <p className={`font-semibold ${
-                  Number(equipment.availableQuantity || 0) > 0
-                    ? "text-green-600 dark:text-green-400"
-                    : "text-red-600 dark:text-red-400"
-                }`}>
+                <p
+                  className={`font-semibold ${
+                    Number(equipment.availableQuantity || 0) > 0
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}
+                >
                   {equipment.availableQuantity || 0} available
                 </p>
               </div>
@@ -274,14 +279,23 @@ export default async function EquipmentDetailsPage({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <SpecItem label="Brand" value={equipment.brand || "Not specified"} />
           <SpecItem label="Model" value={equipment.model || "Not specified"} />
-          <SpecItem label="Condition" value={equipment.condition || "Not specified"} />
+          <SpecItem
+            label="Condition"
+            value={equipment.condition || "Not specified"}
+          />
           <SpecItem
             label="Available Quantity"
             value={String(equipment.availableQuantity || 0)}
           />
-          <SpecItem label="Rental Type" value={equipment.rentalType || "Daily"} />
+          <SpecItem
+            label="Rental Type"
+            value={equipment.rentalType || "Daily"}
+          />
           <SpecItem label="Category" value={equipment.category || "General"} />
-          <SpecItem label="Location" value={equipment.location || "Not specified"} />
+          <SpecItem
+            label="Location"
+            value={equipment.location || "Not specified"}
+          />
           <SpecItem label="Status" value={equipment.status || "pending"} />
         </div>
       </section>
@@ -335,13 +349,7 @@ export default async function EquipmentDetailsPage({
   );
 }
 
-function SpecItem({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function SpecItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
       <span className="text-xs font-semibold text-gray-500 dark:text-zinc-500 uppercase tracking-wider">

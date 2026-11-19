@@ -71,7 +71,7 @@ export default async function AllEquipmentPage() {
             }
             if (key === "action") {
               const e = row as EquipmentRow;
-              return <EquipmentActions id={e.id} status={e.status} />;
+              return <EquipmentActions id={e.id} status={e.status} name={e.name} />;
             }
             return value as React.ReactNode;
           }}
