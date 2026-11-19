@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ChevronDown } from "lucide-react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
 const buttonClass =
@@ -164,34 +164,77 @@ export function FavoriteRemoveButton({ equipmentId }: FavoriteRemoveButtonProps)
 
 type ChangeRoleButtonProps = {
   userId: string;
+  /** The user's current active role, to show in the trigger. */
+  currentRole?: string;
 };
 
-export function ChangeRoleButton({ userId }: ChangeRoleButtonProps) {
-  const [pending, setPending] = useState(false);
+type AdminRole = "admin" | "owner" | "renter";
 
-  const changeRole = async () => {
+const ROLE_LABELS: Record<AdminRole, string> = {
+  admin: "Admin",
+  owner: "Owner",
+  renter: "Renter",
+};
+
+export function ChangeRoleButton({ userId, currentRole }: ChangeRoleButtonProps) {
+  const [pending, setPending] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const handleRoleChange = async (role: AdminRole) => {
+    setOpen(false);
+    if (!userId || pending || role === currentRole) return;
     setPending(true);
     try {
       const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, role: "renter" }),
+        body: JSON.stringify({ userId, role }),
       });
       if (res.ok) {
+        toast.success(`Role changed to ${ROLE_LABELS[role]}.`);
         window.location.reload();
       } else {
-        toast.error("Failed to change role.");
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || "Failed to change role.");
+        setPending(false);
       }
     } catch {
       toast.error("Failed to change role.");
-    } finally {
       setPending(false);
     }
   };
 
   return (
-    <button type="button" onClick={changeRole} disabled={pending} className={buttonClass}>
-      Change Role
-    </button>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={pending || !userId}
+        className={buttonClass}
+      >
+        Change Role <ChevronDown className="ml-0.5 h-3.5 w-3.5" />
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-full z-50 mt-1 w-36 rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {(["owner", "renter"] as AdminRole[]).map((role) => (
+            <button
+              key={role}
+              type="button"
+              onClick={() => handleRoleChange(role)}
+              disabled={pending || role === currentRole}
+              className="flex w-full items-center rounded-md px-2.5 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {ROLE_LABELS[role]}
+              {role === currentRole && (
+                <span className="ml-auto text-[10px] text-gray-400">current</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

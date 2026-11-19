@@ -65,8 +65,9 @@ export default async function AllUsersPage() {
               );
             }
             if (key === "action") {
-              const u = value as { _id?: string; id?: string };
-              return <ChangeRoleButton userId={u._id ?? u.id ?? ""} />;
+              const u = value as { _id?: string; id?: string; activeRole?: string; roles?: string[] };
+              const currentRole = u.activeRole || u.roles?.[0] || "renter";
+              return <ChangeRoleButton userId={u._id ?? u.id ?? ""} currentRole={currentRole} />;
             }
             return value as React.ReactNode;
           }}
