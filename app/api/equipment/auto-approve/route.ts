@@ -26,18 +26,35 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = await db.collection("equipment").updateMany(
-    { status: "pending" },
-    {
-      $set: { status: "approved", updatedAt: new Date() },
-    },
-  );
+  const pending = await db.collection("equipment").find({ status: "pending" });
+  const docs = await pending.toArray();
 
-  const approvedCount = result.modifiedCount;
+  const approvedCount = docs.length;
+  const failedDocs: string[] = [];
+
+  for (const doc of docs) {
+    const listingId = String(doc._id);
+    try {
+      const result = await db.collection("equipment").findOneAndUpdate(
+        { _id: doc._id, status: "pending" },
+        { $set: { status: "approved", updatedAt: new Date() } },
+      );
+
+      if (!result) {
+        failedDocs.push(listingId);
+      }
+    } catch {
+      failedDocs.push(listingId);
+    }
+  }
 
   return NextResponse.json({
-    success: true,
+    success: failedDocs.length === 0,
     approvedCount,
-    message: `Auto-approved ${approvedCount} pending equipment listing(s).`,
+    failed: failedDocs,
+    message:
+      failedDocs.length > 0
+        ? `Auto-approved ${approvedCount - failedDocs.length}/${approvedCount} pending listings; ${failedDocs.length} failed.`
+        : `Auto-approved ${approvedCount} pending equipment listing(s).`,
   });
 }

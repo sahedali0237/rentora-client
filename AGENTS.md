@@ -35,20 +35,19 @@ This repository uses Next.js 16.4.6 with the app router. APIs and conventions di
 
 Every day at 12:00 AM (UTC), a scheduled job auto-approves all pending equipment listings.
 
-- **Endpoint:** `POST /api/equipment/auto-approve`
-- **Guard:** requires the `x-auto-approve-secret` header (or `?secret=` query param) to match the `AUTO_APPROVE_SECRET` environment variable.
+- **Endpoint:** `GET /api/equipment/auto-approve` (cron) — accepts `POST` too
+- **Guard:** requires the `Authorization: Bearer <secret>` header or `?secret=` query param to match the `AUTO_APPROVE_SECRET` environment variable.
 
 **Setup:**
 
 1. Add a new environment variable in the Vercel dashboard:
    `AUTO_APPROVE_SECRET` = any strong random string (e.g. `openssl rand -hex 32`).
-2. Create a **Vercel Cron Job** (Vercel dashboard → Project → Functions → Cron Jobs → Add):
-   - **URL:** `https://<your-project>.vercel.app/api/equipment/auto-approve`
-   - **Method:** `POST`
+2. Cron job is declared in `vercel.json`:
+   - **Path:** `/api/equipment/auto-approve`
    - **Schedule:** `0 0 * * *` (every day at 00:00 UTC)
-   - **Header:** add `x-auto-approve-secret` = the value of `AUTO_APPROVE_SECRET`
+   - The cron sends `Authorization: Bearer $AUTO_APPROVE_SECRET` automatically.
 
-> The app is deployed to Vercel (see above); the cron job runs on Vercel's schedule and calls the protected endpoint. Without the matching secret the request returns `401`.
+> The app is deployed to Vercel; the cron job runs on Vercel's schedule and calls the protected endpoint. Without the matching secret the request returns `401`.
 
 ## Common Gotchas
 - The app uses the new Next.js 16 app router; avoid mixing pages router syntax.

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/equipment/auto-approve",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
