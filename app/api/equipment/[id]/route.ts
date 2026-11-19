@@ -108,7 +108,7 @@ export async function PATCH(
   }
 
   const result = await equipmentCollection().updateOne(
-    { _id: userIdFilter(id) },
+    { _id: userIdFilter(id) } as Record<string, unknown>,
     { $set: { ...safeUpdates, updatedAt: new Date() } },
   );
 

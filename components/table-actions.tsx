@@ -16,18 +16,21 @@ type EquipmentActionsProps = {
   id: string;
   status: string;
   name?: string;
-  /** Admins can approve listings; owners can only view status and terminate. */
+  /** Admins can approve listings; owners cannot. */
   canApprove?: boolean;
   /** Owners can edit their own listings; admins cannot. */
   canEdit?: boolean;
+  /** Admins can terminate any listing; owners cannot. */
+  canTerminate?: boolean;
 };
 
 export function EquipmentActions({
   id,
   status,
   name,
-  canApprove = true,
+  canApprove = false,
   canEdit = false,
+  canTerminate = false,
 }: EquipmentActionsProps) {
   const [pending, setPending] = useState(false);
   const [terminating, setTerminating] = useState(false);
@@ -101,21 +104,23 @@ export function EquipmentActions({
           <Pencil className="h-4 w-4" /> Edit
         </button>
       )}
-      <button
-        type="button"
-        onClick={() => setTerminateOpen(true)}
-        disabled={terminating}
-        className={dangerButtonClass}
-      >
-        <Trash2 className="h-4 w-4" /> Delete
-      </button>
+      {canTerminate && (
+        <button
+          type="button"
+          onClick={() => setTerminateOpen(true)}
+          disabled={terminating}
+          className={dangerButtonClass}
+        >
+          <Trash2 className="h-4 w-4" /> Terminate
+        </button>
+      )}
       <ConfirmDialog
         isOpen={terminateOpen}
         onConfirm={handleTerminate}
         onCancel={() => setTerminateOpen(false)}
-        title="Delete Equipment"
+        title={canTerminate ? "Terminate Listing" : "Delete Equipment"}
         equipmentName={name}
-        confirmLabel="Delete"
+        confirmLabel={canTerminate ? "Terminate" : "Delete"}
         cancelLabel="Cancel"
         destructive
       />

@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getActiveRole } from "@/lib/session";
@@ -212,46 +213,46 @@ export async function DELETE(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
-
   if (!id) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }
 
-  const activeRole = session.user.activeRole;
   const userId = session.user.id;
   const isAdmin = getActiveRole(session.user) === "admin";
 
-  if (activeRole !== "owner" && !isAdmin) {
-    return NextResponse.json(
-      { error: "Owner access required" },
-      { status: 403 },
-    );
-  }
-
-  const filter: Record<string, unknown> = {
+  // Fetch the listing first so we can authorize on *ownership* or admin role.
+  const doc = (await equipmentCollection().findOne({
     _id: userIdFilter(id),
-  };
-  if (activeRole === "owner") {
-    filter.ownerId = userIdFilter(userId);
+  } as Record<string, unknown>)) as { ownerId?: string; _id?: unknown } | null;
+
+  if (!doc) {
+    return NextResponse.json({ error: "Equipment not found" }, { status: 404 });
   }
 
-  const result = await equipmentCollection().deleteOne(filter);
+  const isOwner =
+    !!userId &&
+    (doc.ownerId === userId || doc.ownerId?.toString() === userId.toString());
 
-  if (result.deletedCount === 0) {
-    const exists = await equipmentCollection().countDocuments({
-      _id: userIdFilter(id),
-    } as Record<string, unknown>);
-    if (exists === 0) {
-      return NextResponse.json(
-        { error: "Equipment not found" },
-        { status: 404 },
-      );
-    }
+  if (!isAdmin && !isOwner) {
     return NextResponse.json(
       { error: "You are not allowed to delete this listing." },
       { status: 403 },
     );
   }
 
-  return NextResponse.json({ success: true });
+  const result = await equipmentCollection().deleteOne({
+    _id: userIdFilter(id),
+  } as Record<string, unknown>);
+
+  if (result.deletedCount === 0) {
+    return NextResponse.json(
+      { error: "Equipment not found" },
+      { status: 404 },
+    );
+  }
+
+  return NextResponse.json({
+    success: true,
+    deletedCount: result.deletedCount,
+  });
 }
