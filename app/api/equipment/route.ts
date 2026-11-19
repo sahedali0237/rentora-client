@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { getActiveRole } from "@/lib/session";
 import { db } from "@/lib/auth";
 import { userIdFilter } from "@/lib/users";
 
@@ -15,33 +16,18 @@ export async function GET(request: Request) {
   );
   const skip = (page - 1) * limit;
 
-  const session = await auth.api.getSession({ headers: await headers() });
-  const userId = session?.user?.id;
-  const activeRole = session?.user?.activeRole;
+  const filter: Record<string, unknown> = { status: { $regex: /^approved$/i } };
 
-  // Owner viewing their own listings: return only equipment they added,
-  // regardless of approval status so they can manage pending/rejected items.
-  const isOwnerViewingOwn = activeRole === "owner" && !!userId;
-
-  // Public browsing: only approved/available equipment is visible.
-  // Use case-insensitive match so "Approved", "APPROVED", "approved" all display.
-  const filter: Record<string, unknown> = isOwnerViewingOwn
-    ? { ownerId: userIdFilter(userId) }
-    : { status: { $regex: /^approved$/i } };
-
-  // Optional category filter
   const category = searchParams.get("category");
   if (category) {
     filter.category = category;
   }
 
-  // Optional location filter
   const location = searchParams.get("location");
   if (location) {
     filter.location = { $regex: location, $options: "i" };
   }
 
-  // Optional price range filter: minPrice/maxPrice
   const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
   if (minPrice || maxPrice) {
@@ -51,13 +37,11 @@ export async function GET(request: Request) {
     filter.rentalPrice = priceFilter;
   }
 
-  // Optional rental type filter
   const rentalType = searchParams.get("rentalType");
   if (rentalType) {
     filter.rentalType = rentalType;
   }
 
-  // Optional search query on name/description
   const search = searchParams.get("search");
   if (search) {
     filter.$or = [
@@ -106,7 +90,6 @@ export async function POST(request: Request) {
 
   const data = body as Record<string, unknown>;
 
-  // Validate required fields before inserting
   const requiredFields = [
     "name",
     "description",
@@ -163,9 +146,9 @@ export async function PATCH(request: Request) {
 
   const activeRole = session.user.activeRole;
   const userId = session.user.id;
+  const isAdmin = getActiveRole(session.user) === "admin";
 
-  // Only owners may update equipment, and only their own listings.
-  if (activeRole !== "owner") {
+  if (activeRole !== "owner" && !isAdmin) {
     return NextResponse.json(
       { error: "Owner access required" },
       { status: 403 },
@@ -174,8 +157,10 @@ export async function PATCH(request: Request) {
 
   const filter: Record<string, unknown> = {
     _id: userIdFilter(id),
-    ownerId: userIdFilter(userId),
   };
+  if (activeRole === "owner") {
+    filter.ownerId = userIdFilter(userId);
+  }
 
   const result = await equipmentCollection().updateOne(
     filter,
@@ -204,9 +189,9 @@ export async function DELETE(request: Request) {
 
   const activeRole = session.user.activeRole;
   const userId = session.user.id;
+  const isAdmin = getActiveRole(session.user) === "admin";
 
-  // Only owners may delete equipment, and only their own listings.
-  if (activeRole !== "owner") {
+  if (activeRole !== "owner" && !isAdmin) {
     return NextResponse.json(
       { error: "Owner access required" },
       { status: 403 },
@@ -215,8 +200,10 @@ export async function DELETE(request: Request) {
 
   const filter: Record<string, unknown> = {
     _id: userIdFilter(id),
-    ownerId: userIdFilter(userId),
   };
+  if (activeRole === "owner") {
+    filter.ownerId = userIdFilter(userId);
+  }
 
   const result = await equipmentCollection().deleteOne(filter);
 

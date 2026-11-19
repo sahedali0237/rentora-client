@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import {
-  EquipmentCard,
-  EquipmentCardProps,
-} from "@/components/equipment-card";
+import { EquipmentCard, EquipmentCardProps } from "@/components/equipment-card";
 import { ApiEquipment } from "@/lib/api-types";
 import { Button } from "@/components/ui/button";
 import {
@@ -109,7 +106,7 @@ export default function AllEquipmentPageClient() {
       params.set("sort", filters.sort);
       params.set("order", filters.order);
       params.set("page", filters.page);
-      params.set("limit", "6");
+      params.set("limit", "12");
 
       const res = await fetch(`/api/equipment?${params.toString()}`, {
         cache: "no-store",
@@ -117,9 +114,12 @@ export default function AllEquipmentPageClient() {
 
       if (res.ok) {
         const data = await res.json();
-        setEquipment(data.equipment || []);
-        setTotal(data.total || 0);
-        setTotalPages(data.totalPages || 1);
+        const list: ApiEquipment[] = Array.isArray(data)
+          ? data
+          : (data.equipment ?? []);
+        setEquipment(list);
+        setTotal(data.total ?? list.length);
+        setTotalPages(data.totalPages ?? 1);
       } else {
         toast.error("Failed to load equipment.");
       }
@@ -183,8 +183,18 @@ export default function AllEquipmentPageClient() {
             className="p-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             aria-label="List view"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
         </div>
@@ -204,7 +214,20 @@ export default function AllEquipmentPageClient() {
           />
         </div>
         <Button onClick={fetchEquipment} className="px-6">
-          Search <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 3" /></svg>
+          Search{" "}
+          <svg
+            className="ml-2 h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 13l4 4L19 3"
+            />
+          </svg>
         </Button>
       </div>
 
@@ -214,7 +237,9 @@ export default function AllEquipmentPageClient() {
           Showing {equipment.length} of {total} results
         </p>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600 dark:text-zinc-400">Sort by:</span>
+          <span className="text-sm text-gray-600 dark:text-zinc-400">
+            Sort by:
+          </span>
           <select
             value={`${filters.sort}-${filters.order}`}
             onChange={(e) => {
@@ -242,8 +267,18 @@ export default function AllEquipmentPageClient() {
         ) : equipment.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
             <div className="h-16 w-16 rounded-full bg-gray-200 dark:bg-zinc-800 flex items-center justify-center text-gray-400 dark:text-zinc-500 mb-4">
-              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="h-8 w-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
             <p className="text-gray-500 dark:text-zinc-500">

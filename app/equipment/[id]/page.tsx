@@ -6,7 +6,7 @@ import {
   MapPin,
   ChevronRight,
 } from "lucide-react";
-import { getSession } from "@/lib/session";
+import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
 import { DeleteButton } from "@/components/equipment-delete-button";
 import { ApiEquipment, ApiReview, ApiReviewStats } from "@/lib/api-types";
@@ -57,17 +57,19 @@ export default async function EquipmentDetailsPage({
     notFound();
   }
 
-  // Only approved equipment is viewable by the public.
   const status = equipment.status || "pending";
-  if (status.toLowerCase() !== "approved") {
-    notFound();
-  }
+  const isAdmin = session?.user ? getActiveRole(session.user) === "admin" : false;
 
-  // Determine ownership based strictly on user ID.
+  // Owners may view their own listings regardless of approval status;
+  // admins can view any listing; everyone else only sees approved equipment.
   const isOwner =
     !!currentUserId &&
     (equipment.ownerId === currentUserId ||
       equipment.ownerId?.toString() === currentUserId.toString());
+
+  if (!isAdmin && !isOwner && status.toLowerCase() !== "approved") {
+    notFound();
+  }
 
   // Determine if current user has rented this equipment (for review eligibility).
   let userHasRented = false;

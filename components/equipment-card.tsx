@@ -37,6 +37,18 @@ export function EquipmentCard({
 
   const isApproved = status.toLowerCase() === "approved";
   const isInStock = availableQuantity > 0;
+  const statusLabel =
+    status.toLowerCase() === "approved"
+      ? "Approved"
+      : status.toLowerCase() === "rejected"
+        ? "Rejected"
+        : "Pending Approval";
+  const statusVariant =
+    status.toLowerCase() === "approved"
+      ? ("success" as const)
+      : status.toLowerCase() === "rejected"
+        ? ("destructive" as const)
+        : ("warning" as const);
   const [isFavorited, setIsFavorited] = useState(false);
   const { data: session } = authClient.useSession();
 
@@ -216,8 +228,11 @@ export function EquipmentCard({
               )}
             </div>
 
-            {/* Condition + Availability chips */}
+            {/* Status + Condition + Availability chips */}
             <div className="flex items-center gap-2 mt-2">
+              <Badge variant={statusVariant} className="text-xs font-semibold">
+                <span className="capitalize">{statusLabel}</span>
+              </Badge>
               <Badge variant="outline" className="text-xs">
                 <span>{condition}</span>
               </Badge>
