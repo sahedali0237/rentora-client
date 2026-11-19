@@ -65,11 +65,11 @@ export default async function AllRentalsPage() {
           cellRenderer={(key, value, row) => {
             if (key === "paymentStatus") {
               const variant = value === "paid" ? "success" : "warning";
-              return <Badge variant={variant}>{String(value).charAt(0).toUpperCase() + String(value).slice(1)}</Badge>;
+              return <Badge variant={variant}><span>{String(value).charAt(0).toUpperCase() + String(value).slice(1)}</span></Badge>;
             }
             if (key === "bookingStatus") {
               const variant = value === "completed" ? "success" : value === "cancelled" ? "destructive" : "secondary";
-              return <Badge variant={variant}>{String(value).charAt(0).toUpperCase() + String(value).slice(1)}</Badge>;
+              return <Badge variant={variant}><span>{String(value).charAt(0).toUpperCase() + String(value).slice(1)}</span></Badge>;
             }
             return value as React.ReactNode;
           }}

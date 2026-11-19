@@ -20,14 +20,14 @@ const RENTER_LINKS = [
 
 const OWNER_LINKS = [
   { name: "Home", href: "/" },
-  { name: "Dashboard", href: "/owner" },
+  { name: "All Equipment", href: "/equipment" },
   { name: "How It Works", href: "/how-it-works" },
   { name: "Contact", href: "/contact" },
 ];
 
 const ADMIN_LINKS = [
   { name: "Home", href: "/" },
-  { name: "Admin", href: "/admin" },
+  { name: "All Equipment", href: "/equipment" },
 ];
 
 function linksForRole(role: Role) {
@@ -157,11 +157,11 @@ const Navbar = () => {
             {isPending ? null : user && activeRole ? (
               <>
                 <Link
-                  href={activeRole === "admin" ? "/admin" : `/${activeRole}`}
+                  href="/equipment"
                   onClick={toggleMenu}
                   className="w-full text-center font-medium hover:text-[#fdb03d] dark:hover:text-gray-300 border border-gray-300 dark:border-white/20 py-2 rounded-md transition-colors"
                 >
-                  Dashboard
+                  All Equipment
                 </Link>
                 <RoleSwitcher
                   user={{

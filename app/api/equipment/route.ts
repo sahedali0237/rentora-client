@@ -6,34 +6,74 @@ import { userIdFilter } from "@/lib/users";
 
 const equipmentCollection = () => db.collection("equipment");
 
-export async function GET() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
+  const limit = Math.min(
+    Math.max(parseInt(searchParams.get("limit") || "6", 10), 1),
+    100,
+  );
+  const skip = (page - 1) * limit;
+
+  // Public browsing: only approved/available equipment is visible.
+  const filter: Record<string, unknown> = { status: "approved" };
+
+  // Optional category filter
+  const category = searchParams.get("category");
+  if (category) {
+    filter.category = category;
   }
 
-  const activeRole = session.user.activeRole;
-  const userId = session.user.id;
-
-  const filter: Record<string, unknown> = {};
-
-  if (activeRole === "owner") {
-    // Owners see only their own equipment
-    filter.ownerId = userIdFilter(userId);
+  // Optional location filter
+  const location = searchParams.get("location");
+  if (location) {
+    filter.location = { $regex: location, $options: "i" };
   }
-  // Admins see all equipment (no filter)
-  // Renters should not access this route
 
-  if (activeRole === "renter") {
-    return NextResponse.json({ error: "Renters cannot access equipment management" }, { status: 403 });
+  // Optional price range filter: minPrice/maxPrice
+  const minPrice = searchParams.get("minPrice");
+  const maxPrice = searchParams.get("maxPrice");
+  if (minPrice || maxPrice) {
+    const priceFilter: Record<string, unknown> = {};
+    if (minPrice) priceFilter.$gte = Number(minPrice);
+    if (maxPrice) priceFilter.$lte = Number(maxPrice);
+    filter.rentalPrice = priceFilter;
   }
+
+  // Optional rental type filter
+  const rentalType = searchParams.get("rentalType");
+  if (rentalType) {
+    filter.rentalType = rentalType;
+  }
+
+  // Optional search query on name/description
+  const search = searchParams.get("search");
+  if (search) {
+    filter.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const sortField = searchParams.get("sort") ?? "createdAt";
+  const sortOrder = searchParams.get("order") === "asc" ? 1 : -1;
 
   const equipment = await equipmentCollection()
     .find(filter)
-    .sort({ createdAt: -1 })
+    .sort({ [sortField]: sortOrder })
+    .skip(skip)
+    .limit(limit)
     .toArray();
 
-  return NextResponse.json({ equipment });
+  const total = await equipmentCollection().countDocuments(filter);
+
+  return NextResponse.json({
+    equipment,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  });
 }
 
 export async function POST(request: Request) {
@@ -54,6 +94,28 @@ export async function POST(request: Request) {
   }
 
   const data = body as Record<string, unknown>;
+
+  // Validate required fields before inserting
+  const requiredFields = [
+    "name",
+    "description",
+    "category",
+    "location",
+    "rentalPrice",
+    "rentalType",
+    "availableQuantity",
+    "condition",
+    "terms",
+  ];
+  const missing = requiredFields.filter(
+    (field) => data[field] === undefined || data[field] === "",
+  );
+  if (missing.length > 0) {
+    return NextResponse.json(
+      { error: `Missing required fields: ${missing.join(", ")}` },
+      { status: 400 },
+    );
+  }
 
   const doc = {
     ...data,
@@ -91,11 +153,18 @@ export async function PATCH(request: Request) {
   const activeRole = session.user.activeRole;
   const userId = session.user.id;
 
-  const filter: Record<string, unknown> = { _id: userIdFilter(id) };
-
-  if (activeRole === "owner") {
-    filter.ownerId = userIdFilter(userId);
+  // Only owners may update equipment, and only their own listings.
+  if (activeRole !== "owner") {
+    return NextResponse.json(
+      { error: "Owner access required" },
+      { status: 403 },
+    );
   }
+
+  const filter: Record<string, unknown> = {
+    _id: userIdFilter(id),
+    ownerId: userIdFilter(userId),
+  };
 
   const result = await equipmentCollection().updateOne(
     filter,
@@ -125,11 +194,18 @@ export async function DELETE(request: Request) {
   const activeRole = session.user.activeRole;
   const userId = session.user.id;
 
-  const filter: Record<string, unknown> = { _id: userIdFilter(id) };
-
-  if (activeRole === "owner") {
-    filter.ownerId = userIdFilter(userId);
+  // Only owners may delete equipment, and only their own listings.
+  if (activeRole !== "owner") {
+    return NextResponse.json(
+      { error: "Owner access required" },
+      { status: 403 },
+    );
   }
+
+  const filter: Record<string, unknown> = {
+    _id: userIdFilter(id),
+    ownerId: userIdFilter(userId),
+  };
 
   const result = await equipmentCollection().deleteOne(filter);
 

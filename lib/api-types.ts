@@ -7,13 +7,45 @@ export type ApiEquipment = {
   _id?: string;
   id?: string;
   name?: string;
+  description?: string;
   category?: string;
+  location?: string;
+  rentalPrice?: number | string;
   price?: number | string;
+  rentalType?: string;
   availableQuantity?: number | string;
+  condition?: string;
+  brand?: string;
+  model?: string;
+  image?: string;
+  img?: string;
+  terms?: string;
   status?: string;
   ownerId?: string;
   ownerName?: string;
+  rating?: number;
+  reviewCount?: number;
   createdAt?: string;
+  updatedAt?: string;
+};
+
+export type ApiReview = {
+  _id?: string;
+  id?: string;
+  equipmentId?: string;
+  renterId?: string;
+  renterName?: string;
+  renterImage?: string;
+  rating?: number;
+  comment?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type ApiReviewStats = {
+  averageRating?: number;
+  totalReviews?: number;
+  ratingBreakdown?: Record<number, number>;
 };
 
 export type ApiBooking = {

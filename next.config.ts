@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "i.ibb.co" },
       // OAuth profile photos (Google).
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
+      // Unsplash equipment images.
+      { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
   turbopack: {

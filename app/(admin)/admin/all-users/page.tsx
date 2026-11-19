@@ -60,7 +60,7 @@ export default async function AllUsersPage() {
               const variant: "destructive" | "warning" | "secondary" = roleValue === "admin" ? "destructive" : roleValue === "owner" ? "warning" : "secondary";
               return (
                 <Badge variant={variant} className="capitalize">
-                  {roleValue}
+                  <span>{roleValue}</span>
                 </Badge>
               );
             }

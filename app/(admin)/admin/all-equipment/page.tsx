@@ -67,7 +67,7 @@ export default async function AllEquipmentPage() {
           cellRenderer={(key, value, row) => {
             if (key === "status") {
               const variant = statusVariants[value as string] || "secondary";
-              return <Badge variant={variant} className="capitalize">{String(value)}</Badge>;
+              return <Badge variant={variant} className="capitalize"><span>{String(value)}</span></Badge>;
             }
             if (key === "action") {
               const e = value as EquipmentRow;
