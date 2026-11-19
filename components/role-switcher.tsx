@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { getDashboardPath } from "@/lib/roles";
+import { UserAvatar } from "@/components/user-avatar";
 
 type RoleSwitcherUser = {
   name: string;
@@ -35,17 +36,6 @@ type SwitcherApiResult = {
   error?: string;
   dashboardPath?: string;
 };
-
-function initials(name: string): string {
-  return (
-    name
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? "")
-      .join("") || "U"
-  );
-}
 
 /**
  * Avatar dropdown in the navbar: shows the current mode as a badge and
@@ -152,9 +142,12 @@ export default function RoleSwitcher({ user }: { user: RoleSwitcherUser }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Account menu"
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500 text-sm font-semibold text-gray-900 shadow-sm outline-none transition-transform hover:opacity-90 active:scale-95 focus-visible:ring-2 focus-visible:ring-amber-400"
+        className="flex items-center gap-2 rounded-full bg-amber-500 text-sm font-semibold text-gray-900 shadow-sm outline-none transition-transform hover:opacity-90 active:scale-95 focus-visible:ring-2 focus-visible:ring-amber-400"
       >
-        {initials(user.name)}
+        <UserAvatar name={user.name} image={user.image} />
+        <span className="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">
+          Hi! {user.name}
+        </span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuGroup>

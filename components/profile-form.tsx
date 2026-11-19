@@ -2,10 +2,12 @@
 
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Camera,
   Image as ImageIcon,
   Link as LinkIcon,
+  Loader2,
   Mail,
   MapPin,
   Phone,
@@ -16,6 +18,9 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 
+const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 type ProfileFormProps = {
   title?: string;
   description?: string;
@@ -24,6 +29,7 @@ type ProfileFormProps = {
   initialPhone?: string;
   initialAddress?: string;
   initialImage?: string | null;
+  initialRole?: string | null;
 };
 
 function initialsOf(name: string): string {
@@ -37,6 +43,37 @@ function initialsOf(name: string): string {
   return letters || "U";
 }
 
+function ProfileAvatar({
+  image,
+  name,
+  circleClassName,
+  fallbackClassName,
+}: {
+  image?: string;
+  name: string;
+  circleClassName: string;
+  fallbackClassName?: string;
+}) {
+  const initials = initialsOf(name);
+  const avatarClassName = `relative flex items-center justify-center overflow-hidden ${circleClassName}`;
+
+  return (
+    <div className={avatarClassName}>
+      {image ? (
+        <Image
+          src={image}
+          alt={name}
+          fill
+          className="object-cover"
+          sizes="112px"
+        />
+      ) : (
+        <span className={fallbackClassName}>{initials}</span>
+      )}
+    </div>
+  );
+}
+
 export function ProfileForm({
   title = "My Profile",
   description = "Manage your personal information and account settings.",
@@ -45,6 +82,7 @@ export function ProfileForm({
   initialPhone = "",
   initialAddress = "",
   initialImage = null,
+  initialRole = null,
 }: ProfileFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,12 +94,13 @@ export function ProfileForm({
     address: initialAddress,
     image: initialImage ?? "",
   });
-
-  const [saving, setSaving] = useState(false);
   const [imageUrl, setImageUrl] = useState(initialImage ?? "");
   const [imageMode, setImageMode] = useState<"upload" | "url">("upload");
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const displayName = formData.name.trim() || "User";
+  const activeRole = initialRole ? initialRole.charAt(0).toUpperCase() + initialRole.slice(1) : null;
 
   const updateField = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({
@@ -70,39 +109,61 @@ export function ProfileForm({
     }));
   };
 
-  // Convert uploaded image to a previewable data URL.
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
+    e.target.value = "";
 
     if (!file) return;
 
-    // 2MB limit
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
       toast.error("Image size must be less than 2MB.");
       return;
     }
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-
-    if (!allowedTypes.includes(file.type)) {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       toast.error("Please upload a JPG, PNG, or WEBP image.");
       return;
     }
 
-    const reader = new FileReader();
+    setUploading(true);
 
-    reader.onload = () => {
-      const result = reader.result as string;
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const res = await fetch("/api/upload-image", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      const data = (await res.json().catch(() => null)) as {
+        success?: boolean;
+        imageUrl?: string;
+        error?: string;
+      } | null;
+
+      if (!res.ok || !data?.success || !data?.imageUrl) {
+        toast.error(data?.error || "Image upload failed. Please try again.");
+        return;
+      }
+
+      const uploadedImageUrl = data.imageUrl;
 
       setFormData((prev) => ({
         ...prev,
-        image: result,
+        image: uploadedImageUrl,
       }));
 
-      setImageUrl(result);
-    };
+      setImageUrl(uploadedImageUrl);
+      setImageMode("upload");
 
-    reader.readAsDataURL(file);
+      toast.success("Profile photo uploaded successfully.");
+    } catch {
+      toast.error("Image upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleImageUrl = (value: string) => {
@@ -183,26 +244,21 @@ export function ProfileForm({
         </p>
       </div>
 
-      {/* PROFILE HERO */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#064e3b] via-[#065f46] to-[#047857] px-6 py-7 shadow-sm sm:px-8">
+      {/* PROFILE HEADER */}
+      <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-[#064e3b] via-[#065f46] to-[#047857] px-6 py-8 shadow-sm sm:px-8">
         {/* Decorative background */}
         <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-emerald-400/10" />
-        <div className="absolute -bottom-32 right-20 h-72 w-72 rounded-full border-[40px] border-emerald-300/5" />
+        <div className="absolute -bottom-32 right-20 h-72 w-72 rounded-full border-40px border-emerald-300/5" />
 
         <div className="relative flex flex-col items-center gap-5 sm:flex-row">
           {/* Avatar */}
           <div className="relative shrink-0">
-            <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-white/90 bg-amber-500 text-3xl font-bold text-gray-900 shadow-lg">
-              {formData.image ? (
-                <img
-                  src={formData.image}
-                  alt={displayName}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                initialsOf(displayName)
-              )}
-            </div>
+            <ProfileAvatar
+              image={formData.image || undefined}
+              name={displayName}
+              circleClassName="h-28 w-28 rounded-full border-4 border-white/90 bg-amber-500 shadow-lg"
+              fallbackClassName="text-3xl font-bold text-gray-900"
+            />
 
             {/* Camera button */}
             <button
@@ -214,22 +270,28 @@ export function ProfileForm({
               className="absolute bottom-0 right-0 flex h-10 w-10 items-center justify-center rounded-full border-4 border-[#065f46] bg-amber-500 text-white shadow-md transition hover:bg-amber-600"
               aria-label="Change profile photo"
             >
-              <Camera className="h-5 w-5" />
+              {uploading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Camera className="h-5 w-5" />
+              )}
             </button>
           </div>
 
           {/* User information */}
-          <div className="min-w-0 text-center text-white sm:text-left">
+          <div className="min-w-0 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-              <h2 className="text-2xl font-bold">{displayName}</h2>
+              <h2 className="text-2xl font-bold text-white">{displayName}</h2>
 
-              <span className="inline-flex items-center rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-white">
-                Owner
-              </span>
+              {activeRole ? (
+                <span className="inline-flex items-center rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-white">
+                  {activeRole}
+                </span>
+              ) : null}
             </div>
 
             <div className="mt-2 flex items-center justify-center gap-2 text-sm text-emerald-50 sm:justify-start">
-              <Mail className="h-4 w-4" />
+              <Mail className="h-4 w-4 shrink-0" />
               <span className="truncate">{formData.email}</span>
             </div>
 
@@ -262,18 +324,26 @@ export function ProfileForm({
 
           {/* Image preview */}
           <div className="mb-5 flex justify-center">
-            <div className="relative">
-              <div className="flex h-48 w-48 items-center justify-center overflow-hidden rounded-2xl bg-amber-100 text-5xl font-bold text-amber-600 dark:bg-zinc-800 dark:text-amber-400">
-                {formData.image ? (
-                  <img
-                    src={formData.image}
-                    alt={displayName}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  initialsOf(displayName)
-                )}
-              </div>
+            <div className="relative h-48 w-48 overflow-hidden rounded-2xl border border-gray-200 bg-amber-100 dark:border-zinc-700 dark:bg-zinc-800">
+              {formData.image ? (
+                <Image
+                  src={formData.image}
+                  alt={displayName}
+                  fill
+                  className="object-cover"
+                  sizes="192px"
+                />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-5xl font-bold text-amber-600 dark:text-amber-400">
+                  {initialsOf(displayName)}
+                </span>
+              )}
+
+              {uploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <Loader2 className="h-8 w-8 animate-spin text-white" />
+                </div>
+              )}
             </div>
           </div>
 
@@ -306,27 +376,40 @@ export function ProfileForm({
             </button>
           </div>
 
+          {/* Hidden file input — always mounted so the hero camera button
+              works even while the "Image URL" tab is active. */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
           {/* Upload */}
           {imageMode === "upload" && (
             <div className="mt-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 px-4 py-7 text-center transition hover:border-amber-400 hover:bg-amber-50/50 dark:border-zinc-700 dark:hover:border-amber-500 dark:hover:bg-amber-500/5"
+                disabled={uploading}
+                className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 px-4 py-7 text-center transition hover:border-amber-400 hover:bg-amber-50/50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-zinc-700 dark:hover:border-amber-500 dark:hover:bg-amber-500/5"
               >
-                <Upload className="mb-2 h-7 w-7 text-gray-400" />
-
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Click to choose a photo
-                </span>
+                {uploading ? (
+                  <>
+                    <Loader2 className="mb-2 h-7 w-7 animate-spin text-amber-500" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Uploading...
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mb-2 h-7 w-7 text-gray-400" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Click to choose a photo
+                    </span>
+                  </>
+                )}
 
                 <span className="mt-1 text-xs text-gray-400">
                   JPG, PNG, WEBP · Maximum 2MB

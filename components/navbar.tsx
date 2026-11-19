@@ -95,9 +95,6 @@ const Navbar = () => {
                     activeRole: activeRole,
                   }}
                 />
-                <span className="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap ml-2">
-                  Hi! {user.name}
-                </span>
               </>
             ) : (
               <>
@@ -175,9 +172,6 @@ const Navbar = () => {
                     activeRole: activeRole,
                   }}
                 />
-                <span className="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap mt-2">
-                  Hi! {user.name}
-                </span>
               </>
             ) : (
               <>
