@@ -20,7 +20,7 @@ export default function AllEquipmentPage() {
             <div className="h-8 w-48 bg-gray-200 dark:bg-zinc-800 rounded animate-pulse" />
           </div>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 py-12">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div
               key={i}

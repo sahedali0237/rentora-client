@@ -17,7 +17,7 @@ export async function GET(
 
   const equipment = await equipmentCollection().findOne({
     _id: userIdFilter(id),
-    status: "approved",
+    status: { $regex: /^approved$/i },
   } as Record<string, unknown>);
 
   if (!equipment) {

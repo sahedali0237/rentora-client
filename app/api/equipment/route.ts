@@ -15,8 +15,19 @@ export async function GET(request: Request) {
   );
   const skip = (page - 1) * limit;
 
+  const session = await auth.api.getSession({ headers: await headers() });
+  const userId = session?.user?.id;
+  const activeRole = session?.user?.activeRole;
+
+  // Owner viewing their own listings: return only equipment they added,
+  // regardless of approval status so they can manage pending/rejected items.
+  const isOwnerViewingOwn = activeRole === "owner" && !!userId;
+
   // Public browsing: only approved/available equipment is visible.
-  const filter: Record<string, unknown> = { status: "approved" };
+  // Use case-insensitive match so "Approved", "APPROVED", "approved" all display.
+  const filter: Record<string, unknown> = isOwnerViewingOwn
+    ? { ownerId: userIdFilter(userId) }
+    : { status: { $regex: /^approved$/i } };
 
   // Optional category filter
   const category = searchParams.get("category");

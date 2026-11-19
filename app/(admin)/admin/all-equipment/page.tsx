@@ -70,7 +70,7 @@ export default async function AllEquipmentPage() {
               return <Badge variant={variant} className="capitalize"><span>{String(value)}</span></Badge>;
             }
             if (key === "action") {
-              const e = value as EquipmentRow;
+              const e = row as EquipmentRow;
               return <EquipmentActions id={e.id} status={e.status} />;
             }
             return value as React.ReactNode;

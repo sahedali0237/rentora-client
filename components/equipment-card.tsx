@@ -35,7 +35,7 @@ export function EquipmentCard({
   const reviewCount = Number(equipment.reviewCount || 0);
   const status = equipment.status || "pending";
 
-  const isApproved = status === "approved";
+  const isApproved = status.toLowerCase() === "approved";
   const isInStock = availableQuantity > 0;
   const [isFavorited, setIsFavorited] = useState(false);
   const { data: session } = authClient.useSession();

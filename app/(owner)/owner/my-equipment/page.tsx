@@ -30,7 +30,7 @@ export default async function MyEquipmentPage() {
     .map((e: ApiEquipment) => ({
       name: e.name || "Untitled",
       category: e.category || "Uncategorized",
-      price: `$${e.price || 0}`,
+      price: `$${e.rentalPrice ?? e.price ?? 0}`,
       quantity: String(e.availableQuantity || 0),
       status: e.status || "pending",
       id: e._id || e.id || "",

@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,13 +5,11 @@ import {
   Star,
   MapPin,
   ChevronRight,
-  Trash2 as Trash2Icon,
 } from "lucide-react";
-import { toast } from "react-toastify";
 import { getSession } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
+import { DeleteButton } from "@/components/equipment-delete-button";
 import { ApiEquipment, ApiReview, ApiReviewStats } from "@/lib/api-types";
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ReviewList } from "@/components/reviews";
 
 type DetailsData = {
@@ -26,7 +21,7 @@ type DetailsData = {
   userHasRented: boolean;
 };
 
-export const revalidate = 0;
+export const instant = false;
 
 export default async function EquipmentDetailsPage({
   params,
@@ -64,7 +59,7 @@ export default async function EquipmentDetailsPage({
 
   // Only approved equipment is viewable by the public.
   const status = equipment.status || "pending";
-  if (status !== "approved") {
+  if (status.toLowerCase() !== "approved") {
     notFound();
   }
 
@@ -332,9 +327,6 @@ export default async function EquipmentDetailsPage({
           initialStats={stats}
           canSubmit={!!currentUserId}
           userHasRented={userHasRented}
-          onReviewSubmitted={() => {
-            toast.success("Thanks for your review!");
-          }}
         />
       </section>
     </div>
@@ -386,59 +378,5 @@ function RentNowButton({
         "Out of Stock"
       )}
     </a>
-  );
-}
-
-function DeleteButton({
-  equipmentId,
-  equipmentName,
-}: {
-  equipmentId: string;
-  equipmentName: string;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  const handleConfirmDelete = async () => {
-    setDeleting(true);
-    try {
-      const res = await fetch(
-        `/api/equipment?id=${encodeURIComponent(equipmentId)}`,
-        { method: "DELETE" },
-      );
-      if (res.ok) {
-        toast.success("Equipment deleted successfully.");
-        setIsOpen(false);
-        window.location.href = "/equipment";
-      } else {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.error || "Failed to delete equipment.");
-        setDeleting(false);
-      }
-    } catch {
-      toast.error("Failed to delete equipment.");
-      setDeleting(false);
-    }
-  };
-
-  return (
-    <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-destructive dark:border-zinc-700 text-sm font-semibold text-destructive dark:text-red-400 hover:bg-destructive/10 dark:hover:bg-red-900/10 transition-colors"
-      >
-        <Trash2Icon className="h-4 w-4" /> Delete
-      </button>
-      <ConfirmDialog
-        isOpen={isOpen}
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setIsOpen(false)}
-        title="Delete Equipment"
-        equipmentName={equipmentName}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        destructive
-      />
-    </>
   );
 }

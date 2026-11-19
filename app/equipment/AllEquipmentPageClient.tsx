@@ -109,7 +109,7 @@ export default function AllEquipmentPageClient() {
       params.set("sort", filters.sort);
       params.set("order", filters.order);
       params.set("page", filters.page);
-      params.set("limit", "12");
+      params.set("limit", "6");
 
       const res = await fetch(`/api/equipment?${params.toString()}`, {
         cache: "no-store",
@@ -135,7 +135,13 @@ export default function AllEquipmentPageClient() {
   }, [fetchEquipment]);
 
   const updateFilter = (key: keyof FilterState, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: "1" }));
+    setFilters((prev) => {
+      const next = { ...prev, [key]: value } as FilterState;
+      // Reset to page 1 whenever a filter/sort changes, but keep the
+      // requested page when the user is paginating.
+      if (key !== "page") next.page = "1";
+      return next;
+    });
   };
 
   const resetFilters = () => {
@@ -149,7 +155,7 @@ export default function AllEquipmentPageClient() {
       item.ownerId?.toString() === currentUserId.toString());
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -227,7 +233,7 @@ export default function AllEquipmentPageClient() {
       </div>
 
       {/* Equipment Grid */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
           <div className="col-span-full flex flex-col items-center justify-center py-12">
             <div className="h-8 w-48 bg-gray-200 dark:bg-zinc-800 rounded animate-pulse mb-4" />
