@@ -107,25 +107,27 @@ export default function EditEquipmentClient() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch("/api/equipment", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: equipmentId,
-          name: form.name,
-          description: form.description,
-          category: form.category,
-          location: form.location,
-          rentalPrice: form.rentalPrice,
-          rentalType: form.rentalType,
-          availableQuantity: form.availableQuantity,
-          condition: form.condition,
-          brand: form.brand,
-          model: form.model,
-          image: form.image,
-          terms: form.terms,
-        }),
-      });
+      const res = await fetch(
+        `/api/equipment/${encodeURIComponent(equipmentId)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name,
+            description: form.description,
+            category: form.category,
+            location: form.location,
+            rentalPrice: form.rentalPrice,
+            rentalType: form.rentalType,
+            availableQuantity: form.availableQuantity,
+            condition: form.condition,
+            brand: form.brand,
+            model: form.model,
+            image: form.image,
+            terms: form.terms,
+          }),
+        },
+      );
 
       if (res.ok) {
         toast.success("Equipment updated successfully!");

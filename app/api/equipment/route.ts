@@ -186,7 +186,19 @@ export async function PATCH(request: Request) {
   );
 
   if (result.matchedCount === 0) {
-    return NextResponse.json({ error: "Equipment not found or not authorized" }, { status: 404 });
+    const exists = await equipmentCollection().countDocuments({
+      _id: userIdFilter(id),
+    } as Record<string, unknown>);
+    if (exists === 0) {
+      return NextResponse.json(
+        { error: "Equipment not found" },
+        { status: 404 },
+      );
+    }
+    return NextResponse.json(
+      { error: "You are not allowed to edit this listing." },
+      { status: 403 },
+    );
   }
 
   return NextResponse.json({ success: true });
@@ -226,7 +238,19 @@ export async function DELETE(request: Request) {
   const result = await equipmentCollection().deleteOne(filter);
 
   if (result.deletedCount === 0) {
-    return NextResponse.json({ error: "Equipment not found or not authorized" }, { status: 404 });
+    const exists = await equipmentCollection().countDocuments({
+      _id: userIdFilter(id),
+    } as Record<string, unknown>);
+    if (exists === 0) {
+      return NextResponse.json(
+        { error: "Equipment not found" },
+        { status: 404 },
+      );
+    }
+    return NextResponse.json(
+      { error: "You are not allowed to delete this listing." },
+      { status: 403 },
+    );
   }
 
   return NextResponse.json({ success: true });

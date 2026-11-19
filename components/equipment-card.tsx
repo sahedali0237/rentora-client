@@ -92,8 +92,15 @@ export function EquipmentCard({
   };
 
   return (
-    <Link href={`/equipment/${id}`} className="block group">
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 shadow-sm hover:shadow-md transition-shadow duration-200">
+    <div className="block group">
+      <div
+        className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+        onClick={() => {
+          if (!window.getSelection()?.toString()) {
+            window.location.href = `/equipment/${id}`;
+          }
+        }}
+      >
         {/* Image Section */}
         <div className="relative h-64 overflow-hidden">
           {image ? (
@@ -243,6 +250,6 @@ export function EquipmentCard({
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
