@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
 const buttonClass =
@@ -16,9 +16,19 @@ type EquipmentActionsProps = {
   id: string;
   status: string;
   name?: string;
+  /** Admins can approve listings; owners can only view status and terminate. */
+  canApprove?: boolean;
+  /** Owners can edit their own listings; admins cannot. */
+  canEdit?: boolean;
 };
 
-export function EquipmentActions({ id, status, name }: EquipmentActionsProps) {
+export function EquipmentActions({
+  id,
+  status,
+  name,
+  canApprove = true,
+  canEdit = false,
+}: EquipmentActionsProps) {
   const [pending, setPending] = useState(false);
   const [terminating, setTerminating] = useState(false);
   const [terminateOpen, setTerminateOpen] = useState(false);
@@ -27,7 +37,7 @@ export function EquipmentActions({ id, status, name }: EquipmentActionsProps) {
   const isApproved = String(status).toLowerCase() === "approved";
 
   const handleApprove = async () => {
-    if (isApproved) return;
+    if (!canApprove || isApproved) return;
     setPending(true);
     try {
       const res = await fetch("/api/equipment", {
@@ -56,45 +66,56 @@ export function EquipmentActions({ id, status, name }: EquipmentActionsProps) {
         method: "DELETE",
       });
       if (res.ok) {
-        toast.success("Equipment terminated.");
+        toast.success("Equipment deleted successfully.");
         setTerminateOpen(false);
         window.location.reload();
       } else {
         const err = await res.json().catch(() => ({}));
-        toast.error(err.error || "Failed to terminate equipment.");
+        toast.error(err.error || "Failed to delete equipment.");
         setTerminating(false);
       }
     } catch {
-      toast.error("Failed to terminate equipment.");
+      toast.error("Failed to delete equipment.");
       setTerminating(false);
     }
   };
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={handleApprove}
-        disabled={pending || isApproved}
-        className={buttonClass}
-      >
-        {isApproved ? "Approved" : "Approve"}
-      </button>
+      {canApprove && (
+        <button
+          type="button"
+          onClick={handleApprove}
+          disabled={pending || isApproved}
+          className={buttonClass}
+        >
+          {isApproved ? "Approved" : "Approve"}
+        </button>
+      )}
+      {canEdit && (
+        <button
+          type="button"
+          onClick={() => router.push(`/owner/edit-equipment/${id}`)}
+          className={buttonClass}
+        >
+          <Pencil className="h-4 w-4" /> Edit
+        </button>
+      )}
       <button
         type="button"
         onClick={() => setTerminateOpen(true)}
         disabled={terminating}
         className={dangerButtonClass}
       >
-        <Trash2 className="h-4 w-4" /> Terminate
+        <Trash2 className="h-4 w-4" /> Delete
       </button>
       <ConfirmDialog
         isOpen={terminateOpen}
         onConfirm={handleTerminate}
         onCancel={() => setTerminateOpen(false)}
-        title="Terminate Equipment"
+        title="Delete Equipment"
         equipmentName={name}
-        confirmLabel="Terminate"
+        confirmLabel="Delete"
         cancelLabel="Cancel"
         destructive
       />

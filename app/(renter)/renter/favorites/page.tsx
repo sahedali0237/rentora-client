@@ -52,7 +52,7 @@ export default async function FavoritesPage() {
           data={favorites}
           cellRenderer={(key, value, row) => {
             if (key === "action") {
-              const f = value as FavoriteRow;
+              const f = row as unknown as FavoriteRow;
               return <FavoriteRemoveButton equipmentId={f.equipmentId} />;
             }
             return value as React.ReactNode;

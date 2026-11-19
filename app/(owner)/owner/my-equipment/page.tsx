@@ -18,6 +18,8 @@ type EquipmentRow = {
   ownerEmail: string;
 };
 
+type EquipmentTableRow = EquipmentRow & { action: EquipmentRow };
+
 export default async function MyEquipmentPage() {
   const session = await getSession();
   if (!session) return null;
@@ -26,15 +28,18 @@ export default async function MyEquipmentPage() {
 
   const res = await apiFetch("/api/equipment?mine=true");
   const data = await res.json();
-  const equipment: EquipmentRow[] = (data.equipment || []).map((e: ApiEquipment) => ({
-    name: e.name || "Untitled",
-    category: e.category || "Uncategorized",
-    price: `$${e.rentalPrice ?? e.price ?? 0}`,
-    quantity: String(e.availableQuantity || 0),
-    status: e.status || "pending",
-    id: e._id || e.id || "",
-    ownerEmail: e.ownerEmail || "",
-  }));
+  const equipment: EquipmentTableRow[] = (data.equipment || []).map((e: ApiEquipment) => {
+    const row: EquipmentRow = {
+      name: e.name || "Untitled",
+      category: e.category || "Uncategorized",
+      price: `$${e.rentalPrice ?? e.price ?? 0}`,
+      quantity: String(e.availableQuantity || 0),
+      status: e.status || "pending",
+      id: e._id || e.id || "",
+      ownerEmail: e.ownerEmail || "",
+    };
+    return { ...row, action: row };
+  });
 
   const columns = [
     { key: "name", label: "Equipment" },
@@ -73,8 +78,8 @@ export default async function MyEquipmentPage() {
               return <Badge variant={variant} className="capitalize"><span>{String(value)}</span></Badge>;
             }
             if (key === "action") {
-              const e = value as EquipmentRow;
-              return <EquipmentActions id={e.id} status={e.status} name={e.name} />;
+              const e = row as unknown as EquipmentRow;
+              return <EquipmentActions id={e.id} status={e.status} name={e.name} canApprove={false} canEdit />;
             }
             return value as React.ReactNode;
           }}
