@@ -96,18 +96,26 @@ export function MyRentalsTable({
           return b.createdAt ? new Date(b.createdAt).toLocaleDateString() : "-";
         if (key === "amount") return `$${b.amount || 0}`;
         if (key === "paymentStatus") {
-          const variant = value === "paid" ? "success" : "warning";
+          // Read the actual payment status from the booking (the column key
+          // does not map to a property on the row object). Default to "Unpaid"
+          // when missing so we never show "undefined".
+          const payment = String(b.paymentStatus || "").toLowerCase();
+          const variant = payment === "paid" ? "success" : "secondary";
+          const label =
+            payment === "paid" ? "Paid" : payment ? payment : "Unpaid";
+          const display =
+            label.charAt(0).toUpperCase() + label.slice(1);
           return (
             <Badge variant={variant}>
-              <span>
-                {String(value)
-                  .charAt(0)
-                  .toUpperCase() + String(value).slice(1)}
-              </span>
+              <span>{display}</span>
             </Badge>
           );
         }
         if (key === "bookingStatus") {
+          // Read the actual booking status from the row (the column key does
+          // not map to a property on the row object). The row always carries
+          // a normalized BookingStatus, so this can never be "undefined".
+          const status = String(rentalRow.status || "").toLowerCase();
           const statusMap: Record<
             string,
             "default" | "secondary" | "destructive" | "success" | "warning"
@@ -118,15 +126,14 @@ export function MyRentalsTable({
             completed: "success",
             cancelled: "destructive",
             canceled: "destructive",
+            rejected: "destructive",
           };
-          const variant = statusMap[String(value).toLowerCase()] || "secondary";
+          const variant = statusMap[status] || "secondary";
+          const display =
+            status.charAt(0).toUpperCase() + status.slice(1);
           return (
             <Badge variant={variant}>
-              <span>
-                {String(value)
-                  .charAt(0)
-                  .toUpperCase() + String(value).slice(1)}
-              </span>
+              <span>{display}</span>
             </Badge>
           );
         }

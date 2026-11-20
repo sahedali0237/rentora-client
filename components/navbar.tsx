@@ -14,6 +14,7 @@ import { getActiveRole, type Role } from "@/lib/roles";
 const RENTER_LINKS = [
   { name: "Home", href: "/" },
   { name: "All Equipment", href: "/equipment" },
+  { name: "Reviews", href: "/reviews" },
   { name: "How It Works", href: "/how-it-works" },
   { name: "Contact", href: "/contact" },
 ];
@@ -21,6 +22,7 @@ const RENTER_LINKS = [
 const OWNER_LINKS = [
   { name: "Home", href: "/" },
   { name: "All Equipment", href: "/equipment" },
+  { name: "Reviews", href: "/reviews" },
   { name: "How It Works", href: "/how-it-works" },
   { name: "Contact", href: "/contact" },
 ];
