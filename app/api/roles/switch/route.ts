@@ -85,9 +85,19 @@ export async function POST(request: Request) {
     );
   }
 
-  await usersCollection().updateOne(
-    { _id: userIdFilter(user.id) },
+  const result = await usersCollection().updateOne(
+    { _id: { $in: [user.id, userIdFilter(user.id)] } },
     { $set: { activeRole: targetRole } },
+  );
+
+  console.log(
+    "[AUTH] roles/switch: updateOne",
+    {
+      id: user.id,
+      role: targetRole,
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    },
   );
 
   return NextResponse.json({

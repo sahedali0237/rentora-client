@@ -17,8 +17,9 @@ interface BookingReviewButtonProps {
 /**
  * A row-level "Write a Review" action.
  *
- * - Only shown for `completed` bookings.
- * - If the booking has already been reviewed, a read-only "Reviewed" chip
+ * - Shown for any booking (renters can review equipment at any time, even
+ *   before a rental is completed).
+ * - If the equipment has already been reviewed, a read-only "Reviewed" chip
  *   is shown instead.
  * - Clicking opens the ReviewDialog which POSTs to /api/reviews and updates
  *   the review state after success.
@@ -31,11 +32,6 @@ export function BookingReviewButton({
   onReviewed,
 }: BookingReviewButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
-
-  // Never offer the review flow for incomplete bookings.
-  if (status !== "completed") {
-    return null;
-  }
 
   // Already reviewed — show a compact read-only chip.
   if (reviewed) {

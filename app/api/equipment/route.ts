@@ -77,7 +77,7 @@ export async function GET(request: Request) {
 
   const equipment = await equipmentCollection()
     .find(filter)
-    .sort({ [sortField]: sortOrder })
+    .sort({ [sortField]: sortOrder, createdAt: -1 })
     .skip(skip)
     .limit(limit)
     .toArray();
@@ -194,7 +194,12 @@ export async function PATCH(request: Request) {
   const activeRole = session.user.activeRole;
   const roles: string[] = Array.isArray(session.user.roles) ? session.user.roles : [];
   const userId = await resolveCanonicalUserId(session.user.id);
-  const isAdmin = hasRole(roles, "admin") && activeRole === "admin";
+
+  // Admins can moderate any listing. Resolve the effective role the same way
+  // the GET handler does (trusts an explicitly-set activeRole, falling back to
+  // the highest granted role) so an admin whose activeRole is "admin" is never
+  // rejected with "Owner access required".
+  const isAdmin = getActiveRole(session.user) === "admin";
   console.log(
     "[AUTH] equipment PATCH:",
     { id: session.user.id, email: session.user.email, activeRole, roles, targetId: id },
@@ -210,7 +215,10 @@ export async function PATCH(request: Request) {
   const filter: Record<string, unknown> = {
     _id: userIdFilter(id),
   };
-  if (activeRole === "owner") {
+  // Non-admin owners may only edit their own listings. Admins are not scoped
+  // by ownerId, so they can update moderation/approval fields (status,
+  // isApproved, approved, etc.) on any equipment item.
+  if (activeRole === "owner" && !isAdmin) {
     filter.ownerId = userRefFilter(userId);
   }
 

@@ -8,6 +8,7 @@ import {
   resolveCanonicalUserId,
   userRefFilter,
 } from "@/lib/users";
+import { refreshEquipmentReviewStats } from "@/lib/review-stats";
 
 const reviewsCollection = () => db.collection("reviews");
 
@@ -162,6 +163,10 @@ export async function POST(request: Request) {
 
   const result = await reviewsCollection().insertOne(doc);
 
+  // Keep the equipment doc's denormalized rating/reviewCount in sync so list
+  // cards show live numbers without needing a second fetch.
+  await refreshEquipmentReviewStats(String(equipmentId));
+
   return NextResponse.json({
     success: true,
     id: result.insertedId,
@@ -240,6 +245,15 @@ export async function PATCH(request: Request) {
     );
   }
 
+  // The review belongs to some equipment; refresh that equipment's denormalized
+  // rating/reviewCount so list cards stay accurate after an edit.
+  const updated = await (reviewsCollection() as any).findOne(
+    { _id: _filterId },
+  );
+  if (updated?.equipmentId) {
+    await refreshEquipmentReviewStats(String(updated.equipmentId));
+  }
+
   return NextResponse.json({ success: true });
 }
 
@@ -278,18 +292,23 @@ export async function DELETE(request: Request) {
   // Only the review author can delete. Authorize against the canonical user
   // id (with a legacy ObjectId fallback).
   const userId = await resolveCanonicalUserId(session.user.id);
-  const result = await (reviewsCollection() as any).deleteOne(
-    {
-      _id: userIdFilter(id),
-      renterId: userRefFilter(userId),
-    },
-  );
+  const filter = {
+    _id: userIdFilter(id),
+    renterId: userRefFilter(userId),
+  };
+  const docToDelete = await (reviewsCollection() as any).findOne(filter);
+  const result = await (reviewsCollection() as any).deleteOne(filter);
 
   if (result.deletedCount === 0) {
     return NextResponse.json(
       { error: "Review not found or not authorized" },
       { status: 404 },
     );
+  }
+
+  // Refresh the equipment's denormalized rating/reviewCount after deletion.
+  if (docToDelete?.equipmentId) {
+    await refreshEquipmentReviewStats(String(docToDelete.equipmentId));
   }
 
   return NextResponse.json({ success: true });

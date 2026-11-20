@@ -20,18 +20,31 @@ import { EarningsChart } from "@/components/earnings-chart";
 export const instant = false;
 
 async function getStats() {
+  // Only parse JSON when the API responded successfully. Error responses are
+  // always JSON from our API routes, but guarding here prevents a client-side
+  // JSON parse error (and a crashed dashboard) if a route ever returns a
+  // non-JSON error page while failing/unauthenticated.
+  async function readJson(res: Response) {
+    if (!res.ok) return {};
+    try {
+      return (await res.json()) ?? {};
+    } catch {
+      return {};
+    }
+  }
+
   const usersRes = await apiFetch("/api/admin/users");
-  const usersData = await usersRes.json();
+  const usersData = await readJson(usersRes);
 
   const equipRes = await apiFetch("/api/equipment");
-  const equipData = await equipRes.json();
+  const equipData = await readJson(equipRes);
 
   const bookRes = await apiFetch("/api/bookings");
-  const bookData = await bookRes.json();
+  const bookData = await readJson(bookRes);
 
-  const users: ApiUser[] = usersData.users || [];
-  const equipment: ApiEquipment[] = equipData.equipment || [];
-  const bookings: ApiBooking[] = bookData.bookings || [];
+  const users: ApiUser[] = (usersData as { users?: ApiUser[] }).users || [];
+  const equipment: ApiEquipment[] = (equipData as { equipment?: ApiEquipment[] }).equipment || [];
+  const bookings: ApiBooking[] = (bookData as { bookings?: ApiBooking[] }).bookings || [];
 
   const totalUsers = users.length;
   const totalEquipment = equipment.length;

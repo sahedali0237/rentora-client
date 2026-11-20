@@ -35,24 +35,39 @@ export function hasRole(roles: string[] | undefined, role: Role): boolean {
 }
 
 /**
- * Resolve the user's effective active role. Trusts activeRole only when it is
- * actually present in the user's roles array; otherwise falls back to the
- * user's highest granted role (admin > owner > renter). Never returns a role
- * the account does not possess.
+ * Resolve the user's effective active role.
+ *
+ * The database's `activeRole` is the source of truth for which mode the
+ * account is currently in. When it is explicitly set to "admin" or "owner",
+ * trust it — even if the `roles` array is temporarily out of sync (for
+ * example after a direct DB change via `scripts/make-admin.ts`). The
+ * server-side `requireRole()` guard still re-validates that the role is
+ * present in `roles` before granting access, so route protection is never
+ * weakened.
+ *
+ * When `activeRole` is missing, "renter", or unrecognized, fall back to the
+ * highest role the account actually holds (admin > owner > renter).
  */
 export function getActiveRole(user: {
   activeRole?: string | null;
   roles?: string[] | null;
 }): Role {
   const roles: string[] = Array.isArray(user.roles) ? user.roles : [];
-  const normalized = normalizeRole(user.activeRole ?? null);
 
-  if (roles.includes(normalized)) {
-    return normalized;
+  // Trust an explicitly-set activeRole as the current mode. This covers
+  // "admin", "owner", and "renter" — a user whose DB record has
+  // activeRole: "renter" must be treated as renter even when their roles
+  // array also contains "owner". Falling through to the roles-based fallback
+  // here would force "owner" whenever roles includes "owner", which is the
+  // stale-mode bug that bounces a freshly-switched renter back to /owner.
+  if (user.activeRole === "admin" || user.activeRole === "owner") {
+    return user.activeRole;
+  }
+  if (user.activeRole === "renter") {
+    return "renter";
   }
 
-  // activeRole is missing or not in the account's roles — fall back to the
-  // highest role the account actually holds.
+  // activeRole is missing or unrecognized — fall back to the highest granted role.
   if (roles.includes("admin")) return "admin";
   if (roles.includes("owner")) return "owner";
   return "renter";

@@ -23,7 +23,23 @@ export default async function AllUsersPage() {
 
   const res = await apiFetch("/api/admin/users");
   const data = await res.json();
-  const users: UserRow[] = data.users || [];
+
+  // Surface API errors (401/403/500) instead of silently rendering "No records found."
+  if (!res.ok) {
+    console.error(
+      "[AllUsersPage] /api/admin/users failed:",
+      res.status,
+      res.statusText,
+      data,
+    );
+  }
+  const users: UserRow[] = Array.isArray(data?.users) ? data.users : [];
+  if (!Array.isArray(data?.users)) {
+    console.error(
+      "[AllUsersPage] Expected `users` array in API response:",
+      { status: res.status, ok: res.ok, body: data },
+    );
+  }
 
   const columns = [
     { key: "name", label: "Name" },

@@ -85,18 +85,20 @@ export default async function MyRentalsPage() {
   // "Reviewed" without needing a new endpoint.
   const userReviewBookingIds: string[] = [];
 
-  const completedEquipmentIds = Array.from(
+  // Reviews are available at any time, so look up the user's existing reviews
+  // against every piece of equipment the user has booked (regardless of
+  // booking status).
+  const equipmentIdsWithBookings = Array.from(
     new Set(
       rawBookings
-        .filter((b) => String(b.status || "").toLowerCase() === "completed")
         .map((b) => b.equipmentId)
         .filter((id): id is string => Boolean(id)),
     ),
   );
-  if (completedEquipmentIds.length > 0) {
+  if (equipmentIdsWithBookings.length > 0) {
     try {
       const results = await Promise.all(
-        completedEquipmentIds.map(async (eid) => {
+        equipmentIdsWithBookings.map(async (eid) => {
           const res = await apiFetch(
             `/api/reviews?equipmentId=${encodeURIComponent(eid)}`,
           );
@@ -150,9 +152,9 @@ export default async function MyRentalsPage() {
     return {
       booking: b,
       status,
-      reviewed:
-        status === "completed" &&
-        userReviewBookingIds.includes(b._id || b.id || ""),
+      // A review can exist for this equipment regardless of booking status;
+      // mark the row "reviewed" purely on whether the user has a review.
+      reviewed: userReviewBookingIds.includes(b._id || b.id || ""),
     };
   });
 

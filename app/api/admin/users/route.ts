@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getActiveRole, hasRole, type Role } from "@/lib/roles";
+import { getActiveRole, type Role } from "@/lib/roles";
 import { userIdFilter, usersCollection } from "@/lib/users";
 
 /**
@@ -22,17 +22,26 @@ export async function GET() {
     { id: session.user.id, email: session.user.email, activeRole, roles },
   );
 
-  if (!hasRole(roles, "admin") || activeRole !== "admin") {
+  // Authorize on the effective active role (trusts activeRole: "admin" even
+  // when `roles` is ["renter", "owner"], e.g. after make-admin.ts set it
+  // directly in the DB). roles.includes("admin") is the fallback.
+  if (getActiveRole(session.user) !== "admin") {
     return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
-  const users = await usersCollection()
-    .find(
-      {},
-      { projection: { name: 1, email: 1, roles: 1, activeRole: 1, createdAt: 1 } },
-    )
-    .sort({ createdAt: -1 })
-    .toArray();
+  let users;
+  try {
+    users = await usersCollection()
+      .find(
+        {},
+        { projection: { name: 1, email: 1, roles: 1, activeRole: 1, createdAt: 1 } },
+      )
+      .sort({ createdAt: -1 })
+      .toArray();
+  } catch (error) {
+    console.error("[AUTH] admin/users GET: DB error", error);
+    return NextResponse.json({ error: "Failed to load users" }, { status: 500 });
+  }
 
   return NextResponse.json({ users });
 }
@@ -59,7 +68,7 @@ export async function PATCH(request: Request) {
     { id: session.user.id, email: session.user.email, activeRole, roles },
   );
 
-  if (!hasRole(roles, "admin") || activeRole !== "admin") {
+  if (getActiveRole(session.user) !== "admin") {
     return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
@@ -91,9 +100,15 @@ export async function PATCH(request: Request) {
   }
 
   // Verify the target user exists.
-  const targetUser = await usersCollection().findOne({
-    _id: userIdFilter(userId),
-  });
+  let targetUser;
+  try {
+    targetUser = await usersCollection().findOne({
+      _id: userIdFilter(userId),
+    });
+  } catch (error) {
+    console.error("[AUTH] admin/users PATCH: DB error", error);
+    return NextResponse.json({ error: "Failed to load target user" }, { status: 500 });
+  }
   if (!targetUser) {
     return NextResponse.json({ error: "Target user not found" }, { status: 404 });
   }
@@ -101,10 +116,15 @@ export async function PATCH(request: Request) {
   const targetRoles: string[] = Array.isArray(targetUser.roles) ? targetUser.roles : [];
   const nextRoles: string[] = [role];
 
-  await usersCollection().updateOne(
-    { _id: userIdFilter(userId) },
-    { $set: { roles: nextRoles, activeRole: role } },
-  );
+  try {
+    await usersCollection().updateOne(
+      { _id: userIdFilter(userId) },
+      { $set: { roles: nextRoles, activeRole: role } },
+    );
+  } catch (error) {
+    console.error("[AUTH] admin/users PATCH: DB error", error);
+    return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
+  }
 
   console.log(
     `[AUTH] admin/users PATCH: changed user ${userId} roles to ${JSON.stringify(nextRoles)}, activeRole: ${role}`,

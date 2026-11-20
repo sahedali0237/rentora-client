@@ -17,9 +17,12 @@ interface ReviewDialogProps {
 }
 
 /**
- * A styled modal for submitting a review of a completed booking.
+ * A styled modal for submitting a review of an equipment item.
  * Replaces browser confirm() with an accessible, themed dialog.
  * Reuses Better Auth's `authClient.useSession()` for the signed-in user.
+ *
+ * No booking-status gate: renters can review at any time (pending, active,
+ * completed, or even before a rental finishes).
  */
 export function ReviewDialog({
   isOpen,

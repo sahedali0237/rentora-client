@@ -96,10 +96,15 @@ export default function RoleSwitcher() {
     setPending(true);
     try {
       await request("/api/roles/become-owner");
+      // Sync the Better Auth session cookie so the new activeRole is
+      // reflected immediately on the client without a sign-out / sign-in.
+      await (authClient as any).updateUser({ activeRole: "owner" });
       await refreshSession();
       toast.success("You are now an Owner. Welcome aboard!");
-      router.push(getDashboardPath("owner"));
-      router.refresh();
+      // Hard navigation reloads every client hook and server layout cleanly,
+      // so the fresh activeRole (and the re-validated requireRole guard) take
+      // effect immediately instead of serving a stale router cache.
+      window.location.href = getDashboardPath("owner");
     } catch (error: unknown) {
       toast.error(
         error instanceof Error ? error.message : "Failed to become an Owner.",
@@ -113,12 +118,20 @@ export default function RoleSwitcher() {
     setPending(true);
     try {
       await request("/api/roles/switch", { role: target });
+      // Sync the Better Auth session cookie so the new activeRole is
+      // reflected immediately on the client without a sign-out / sign-in.
+      // `activeRole` is an additional user field defined in auth.ts; it is
+      // accepted server-side (z.record<string, any>) but not in the client's
+      // inferred updateUser type, hence the cast.
+      await (authClient as any).updateUser({ activeRole: target });
       await refreshSession();
       toast.success(
         target === "owner" ? "Switched to Owner mode." : "Switched to Renter mode.",
       );
-      router.push(getDashboardPath(target));
-      router.refresh();
+      // Hard navigation reloads every client hook and server layout cleanly,
+      // so the fresh activeRole (and the re-validated requireRole guard) take
+      // effect immediately instead of serving a stale router cache.
+      window.location.href = getDashboardPath(target);
     } catch (error: unknown) {
       toast.error(
         error instanceof Error ? error.message : "Failed to switch role.",

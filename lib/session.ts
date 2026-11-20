@@ -4,13 +4,13 @@ import { auth } from "@/lib/auth";
 import {
   getDashboardPath,
   getActiveRole,
-  hasRole,
   type Role,
 } from "@/lib/roles";
 
 // Re-exported for backward compatibility — many pages import this from
-// @/lib/session. The implementation now lives in @/lib/roles and validates
-// that activeRole is actually present in the user's roles array.
+// @/lib/session. The implementation now lives in @/lib/roles and trusts an
+// explicitly-set activeRole (admin/owner) as the current mode, while requireRole()
+// still re-validates that the role is present in `roles` server-side.
 export { getActiveRole } from "@/lib/roles";
 
 type FullSession = NonNullable<
@@ -22,9 +22,9 @@ export type SessionUser = FullSession["user"];
 
 /**
  * Resolve the user's effective active role from the session user object.
- * Validates that activeRole is actually present in the user's roles array,
- * so a corrupted or stale activeRole can never grant a role the account
- * does not possess.
+ * Trusts an explicitly-set activeRole (admin/owner) as the current mode;
+ * requireRole() still re-validates that the role is present in `roles`
+ * before granting access.
  */
 export function getSessionActiveRole(user: Pick<
   SessionUser,
@@ -34,7 +34,16 @@ export function getSessionActiveRole(user: Pick<
 }
 
 export async function getSession(): Promise<UserSession | null> {
-  const session = await auth.api.getSession({ headers: await headers() });
+  // disableCookieCache forces a fresh read from the database rather than
+  // returning the potentially-stale session_data cookie cache. This is
+  // essential after a role switch updates activeRole in MongoDB but the
+  // cookie still carries the previous value — without it, requireRole()
+  // in the /owner and /renter layouts would see a stale activeRole and
+  // bounce the user between dashboards.
+  const session = await auth.api.getSession({
+    headers: await headers(),
+    query: { disableCookieCache: true },
+  });
   if (session) {
     // Debug: log authenticated identity (no secrets/tokens).
     console.log(
@@ -83,8 +92,19 @@ export async function requireRole(
     )}`,
   );
 
-  // The user must both possess the role and have it active.
-  if (!hasRole(roles, role) || activeRole !== role) {
+  // Authorize using the session's activeRole as the current mode.
+  // getActiveRole() already trusts an explicitly-set activeRole (admin/owner)
+  // as the source of truth, so requireRole() must be consistent: an admin
+  // whose activeRole is "admin" reaches /admin even when `roles` is
+  // temporarily out of sync (e.g. only ["renter","owner"]).
+  //
+  // On a mismatch, send the user to *their own* active-role dashboard.
+  // Redirecting to a dashboard derived from `roles` (the previous fallback)
+  // caused redirect loops when activeRole and roles disagreed (e.g. activeRole
+  // "admin" bouncing between /admin and /owner). Sending them to their own
+  // active-role dashboard always lands on a layout whose requireRole passes,
+  // so there is no loop.
+  if (activeRole !== role) {
     redirect(getDashboardPath(activeRole));
   }
 
