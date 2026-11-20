@@ -28,15 +28,12 @@ export default async function MyRentalsPage() {
 
   // Pass the logged-in user's email to the bookings API for reliable lookup
   const email = session.user.email;
-  console.log("Logged-in user:", { email, name: session.user.name, id: session.user.id });
-  
+
   const url = `/api/bookings?email=${encodeURIComponent(email)}`;
-  console.log("Bookings API URL:", url);
-  
+
   const res = await apiFetch(url);
   const data = await res.json();
-  console.log("Bookings response:", data);
-  
+
   const rentals: RentalRow[] = (data.bookings || []).map((b: ApiBooking) => ({
       equipment: b.equipmentName || b.name || "Untitled",
       startDate: b.startDate || "-",

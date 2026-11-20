@@ -49,3 +49,13 @@ export async function resolveCanonicalUserId(
   });
   return user?._id?.toString() ?? sessionId;
 }
+
+/**
+ * Match a user-reference field (`ownerId` / `renterId`) regardless of whether
+ * it was stored as the user's `_id` string or as an ObjectId. This app writes
+ * those fields as strings, but seed/legacy documents may use ObjectId — the
+ * `$in` form matches both representations.
+ */
+export function userRefFilter(id: string): { $in: Array<ObjectId | string> } {
+  return { $in: [id, userIdFilter(id)] };
+}

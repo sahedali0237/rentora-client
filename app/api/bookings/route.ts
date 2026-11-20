@@ -3,9 +3,11 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/auth";
-import { userIdFilter, resolveCanonicalUserId, usersCollection } from "@/lib/users";
+import { getActiveRole, hasRole, type Role } from "@/lib/roles";
+import { userIdFilter, resolveCanonicalUserId, userRefFilter, usersCollection } from "@/lib/users";
 
 const bookingsCollection = () => db.collection("bookings");
+const equipmentCollection = () => db.collection("equipment");
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -44,25 +46,45 @@ export async function GET(request: Request) {
   // Original session-based logic (requires authentication)
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
+    console.log("[AUTH] bookings GET: unauthenticated request");
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const activeRole = session.user.activeRole;
+  const roles: string[] = Array.isArray(session.user.roles) ? session.user.roles : [];
+  const activeRole = getActiveRole(session.user);
   // Canonical Mongo _id (as string) of the current user.
   const userId = await resolveCanonicalUserId(session.user.id);
   // The raw session id. Older rows may have been written with this value
   // before we started canonicalizing, so match on both to stay inclusive.
   const sessionId = session.user.id;
 
-  const match: Array<ObjectId | string> = [userIdFilter(userId)];
+  console.log(
+    "[AUTH] bookings GET:",
+    { id: session.user.id, email: session.user.email, activeRole, roles },
+  );
+
+  // Bookings store renterId/ownerId as the user's `_id` string; include the
+  // ObjectId form too so legacy rows written with ObjectId still match.
+  const match: Array<ObjectId | string> = [userId, userIdFilter(userId)];
   if (sessionId !== userId) {
-    match.push(userIdFilter(sessionId));
+    match.push(sessionId, userIdFilter(sessionId));
   }
 
   const filter: Record<string, unknown> = {};
 
   if (activeRole === "owner") {
-    filter.ownerId = { $in: match };
+    // Bookings reference equipment via `equipmentId` (string) — there is no
+    // ownerId on booking documents. Scope through the owner's equipment:
+    // owner -> equipment -> booking.
+    const ownerEquipment = await equipmentCollection()
+      .find({ ownerId: userRefFilter(userId) })
+      .project({ _id: 1 })
+      .toArray();
+    const equipmentIds = ownerEquipment.map((eq) => eq._id.toString());
+    if (equipmentIds.length === 0) {
+      return NextResponse.json({ bookings: [] });
+    }
+    filter.equipmentId = { $in: equipmentIds };
   } else if (activeRole === "renter") {
     filter.renterId = { $in: match };
   }
@@ -79,10 +101,18 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
+    console.log("[AUTH] bookings POST: unauthenticated request");
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  if (session.user.activeRole !== "renter") {
+  const roles: string[] = Array.isArray(session.user.roles) ? session.user.roles : [];
+  const activeRole = getActiveRole(session.user);
+  console.log(
+    "[AUTH] bookings POST:",
+    { id: session.user.id, email: session.user.email, activeRole, roles },
+  );
+
+  if (activeRole !== "renter" || !roles.includes("renter")) {
     return NextResponse.json({ error: "Renter access required" }, { status: 403 });
   }
 
@@ -146,25 +176,84 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }
 
-  const activeRole = session.user.activeRole;
+  const roles: string[] = Array.isArray(session.user.roles) ? session.user.roles : [];
+  const activeRole = getActiveRole(session.user);
   const userId = await resolveCanonicalUserId(session.user.id);
+  const isAdmin = hasRole(roles, "admin") && activeRole === "admin";
+  console.log(
+    "[AUTH] bookings PATCH:",
+    { id: session.user.id, email: session.user.email, activeRole, roles, targetId: id },
+  );
 
-  const filter: Record<string, unknown> = { _id: userIdFilter(id) };
+  // First, find the booking to verify ownership/authorization
+  const booking = await bookingsCollection().findOne(
+    { _id: userIdFilter(id) } as Record<string, unknown>,
+  );
+
+  if (!booking) {
+    return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+  }
+
+  let authorized = false;
 
   if (activeRole === "owner") {
-    filter.ownerId = userIdFilter(userId);
+    // Owner can only update bookings for their own equipment
+    // Verify by checking if the equipment belongs to this owner
+    const equipment = await equipmentCollection().findOne(
+      {
+        _id: userIdFilter(String(booking.equipmentId)),
+        ownerId: userRefFilter(userId),
+      } as Record<string, unknown>,
+    );
+    authorized = !!equipment;
+
+    // Owners can only update status (confirm/reject), not paymentStatus
+    if (authorized && updates.status) {
+      const allowedStatuses = ["pending", "confirmed", "rejected"];
+      if (!allowedStatuses.includes(String(updates.status))) {
+        return NextResponse.json({ error: "Invalid status value" }, { status: 400 });
+      }
+      // Prevent owner from changing paymentStatus
+      delete updates.paymentStatus;
+    } else if (authorized) {
+      // Owner trying to update other fields - restrict to status only
+      const allowedKeys = ["status"];
+      const updateKeys = Object.keys(updates);
+      const invalidKeys = updateKeys.filter((k) => !allowedKeys.includes(k));
+      if (invalidKeys.length > 0) {
+        return NextResponse.json(
+          { error: `Owner can only update status. Invalid fields: ${invalidKeys.join(", ")}` },
+          { status: 400 },
+        );
+      }
+    }
   } else if (activeRole === "renter") {
-    filter.renterId = userIdFilter(userId);
+    // Renter can only update their own bookings
+    authorized = booking.renterId === userId || booking.renterId === session.user.id;
+    // Renters should not be able to change status manually (only cancel maybe)
+    if (updates.status) {
+      return NextResponse.json({ error: "Renters cannot update booking status" }, { status: 403 });
+    }
+  } else if (activeRole === "admin") {
+    authorized = true;
+  }
+
+  if (!authorized) {
+    return NextResponse.json({ error: "Not authorized to update this booking" }, { status: 403 });
   }
 
   const result = await bookingsCollection().updateOne(
-    filter,
+    { _id: userIdFilter(id) } as Record<string, unknown>,
     { $set: { ...updates, updatedAt: new Date() } },
   );
 
   if (result.matchedCount === 0) {
-    return NextResponse.json({ error: "Booking not found or not authorized" }, { status: 404 });
+    return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ success: true });
+  // Return the updated booking
+  const updatedBooking = await bookingsCollection().findOne(
+    { _id: userIdFilter(id) } as Record<string, unknown>,
+  );
+  return NextResponse.json({ success: true, booking: updatedBooking });
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Camera,
@@ -17,6 +16,7 @@ import {
   User,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useSessionUser } from "@/lib/use-session-user";
 
 const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -84,8 +84,8 @@ export function ProfileForm({
   initialImage = null,
   initialRole = null,
 }: ProfileFormProps) {
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user, updateUser } = useSessionUser();
 
   const [formData, setFormData] = useState({
     name: initialName,
@@ -199,29 +199,26 @@ export function ProfileForm({
     setSaving(true);
 
     try {
-      const res = await fetch("/api/user/profile", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      // Persist to the database, sync the shared Better Auth user/session, and
+      // refresh the Navbar — all without a hard browser refresh.
+      const newImage = await updateUser(
+        {
           name: formData.name,
           phone: formData.phone,
           address: formData.address,
           image: formData.image,
-        }),
-      });
+        },
+        user,
+      );
 
-      if (res.ok) {
-        toast.success("Profile updated successfully.");
-        router.refresh();
-      } else {
-        const data = await res.json().catch(() => null);
+      console.log("New uploaded image URL:", newImage);
+      console.log("Updated user:", user);
 
-        toast.error(data?.message || "Failed to update profile.");
-      }
-    } catch {
-      toast.error("Failed to update profile.");
+      toast.success("Profile updated successfully.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update profile.",
+      );
     } finally {
       setSaving(false);
     }

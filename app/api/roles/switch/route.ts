@@ -1,26 +1,35 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getDashboardPath } from "@/lib/roles";
+import { getDashboardPath, hasRole, type Role } from "@/lib/roles";
 import { userIdFilter, usersCollection } from "@/lib/users";
 
 /**
  * POST /api/roles/switch
  * Body: { role: "owner" | "renter" }
  *
- * Switches the signed-in user's activeRole. "admin" is rejected outright,
- * and the target role must already be present on the user's roles array.
- * The user id always comes from the session — never from the client.
+ * Switches the signed-in user's activeRole between roles they already hold.
+ * "admin" is rejected outright. The target role must already be present on
+ * the user's roles array. The user id always comes from the session — never
+ * from the client.
  */
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
+    console.log("[AUTH] roles/switch: unauthenticated request");
     return NextResponse.json(
       { success: false, error: "Authentication required." },
       { status: 401 },
     );
   }
   const { user } = session;
+  const currentRoles: string[] = Array.isArray(user.roles) ? user.roles : [];
+  const isAdmin = currentRoles.includes("admin");
+
+  console.log(
+    "[AUTH] roles/switch:",
+    { id: user.id, email: user.email, roles: currentRoles, activeRole: user.activeRole },
+  );
 
   let body: unknown;
   try {
@@ -54,20 +63,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const currentRoles = Array.isArray(user.roles) ? user.roles : [];
-  const isAdmin = currentRoles.includes("admin");
+  const targetRole = role as Role;
 
-  // "admin" can never be selected as an active role (handled above).
-  // "renter" is the default role every account starts with, so any
-  // non-admin user can switch into Renter mode. "owner" is a granted
-  // privilege and must already be present on the account.
-  if (role === "owner" && !currentRoles.includes("owner")) {
+  // The target role must already be present on the account. "renter" is the
+  // default for every account, but we still verify rather than assume.
+  if (!hasRole(currentRoles, targetRole)) {
     return NextResponse.json(
-      { success: false, error: 'You do not have the "owner" role.' },
+      {
+        success: false,
+        error: `You do not have the "${targetRole}" role.`,
+      },
       { status: 403 },
     );
   }
-  if (role === "renter" && isAdmin) {
+
+  // Admin accounts cannot switch away from admin mode via this endpoint.
+  if (targetRole === "renter" && isAdmin) {
     return NextResponse.json(
       { success: false, error: "Admin accounts cannot switch to Renter mode." },
       { status: 403 },
@@ -76,12 +87,12 @@ export async function POST(request: Request) {
 
   await usersCollection().updateOne(
     { _id: userIdFilter(user.id) },
-    { $set: { activeRole: role } },
+    { $set: { activeRole: targetRole } },
   );
 
   return NextResponse.json({
     success: true,
-    activeRole: role,
-    dashboardPath: getDashboardPath(role),
+    activeRole: targetRole,
+    dashboardPath: getDashboardPath(targetRole),
   });
 }

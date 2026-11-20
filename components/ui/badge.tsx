@@ -21,21 +21,30 @@ const variants: Record<BadgeVariant, string> = {
   warning: "border-transparent bg-amber-500 text-amber-900 hover:bg-amber-400",
 };
 
+const badgeClasses = (variant: BadgeVariant, className?: string) =>
+  cn(
+    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+    variants[variant ?? "default"],
+    className,
+  );
+
 const Badge = React.forwardRef<
   React.ElementRef<typeof Slot>,
-  React.ComponentPropsWithoutRef<typeof Slot> & { variant?: BadgeVariant }
->(({ className, variant = "default", ...props }, ref) => {
-  return (
-    <Slot
-      ref={ref}
-      className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-        variants[variant ?? "default"],
-        className,
-      )}
-      {...props}
-    />
-  );
+  React.ComponentPropsWithoutRef<typeof Slot> & {
+    variant?: BadgeVariant;
+    asChild?: boolean;
+  }
+>(({ className, variant = "default", asChild = false, ...props }, ref) => {
+  const classes = badgeClasses(variant ?? "default", className);
+
+  // `Slot` requires a single React element child, so only use it when the
+  // caller explicitly opts into `asChild`. Otherwise render a plain <span>,
+  // which safely accepts text/fragment children.
+  if (asChild) {
+    return <Slot ref={ref} className={classes} {...props} />;
+  }
+
+  return <span ref={ref} className={classes} {...props} />;
 });
 Badge.displayName = "Badge";
 

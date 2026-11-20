@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getDashboardPath } from "@/lib/roles";
+import { getDashboardPath, hasRole, type Role } from "@/lib/roles";
 import { userIdFilter, usersCollection } from "@/lib/users";
 
 /**
@@ -15,15 +15,22 @@ import { userIdFilter, usersCollection } from "@/lib/users";
 export async function POST() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
+    console.log("[AUTH] roles/become-owner: unauthenticated request");
     return NextResponse.json(
       { success: false, error: "Authentication required." },
       { status: 401 },
     );
   }
   const { user } = session;
+  const currentRoles: string[] = Array.isArray(user.roles) ? user.roles : [];
+  const isAdmin = currentRoles.includes("admin");
 
-  const currentRoles = Array.isArray(user.roles) ? user.roles : [];
-  if (currentRoles.includes("admin")) {
+  console.log(
+    "[AUTH] roles/become-owner:",
+    { id: user.id, email: user.email, roles: currentRoles, activeRole: user.activeRole },
+  );
+
+  if (isAdmin) {
     return NextResponse.json(
       { success: false, error: "Admin accounts cannot become owners." },
       { status: 403 },
@@ -38,11 +45,13 @@ export async function POST() {
     },
   );
 
+  const newRoles: Role[] = hasRole(currentRoles, "owner")
+    ? currentRoles as Role[]
+    : ([...currentRoles, "owner"] as Role[]);
+
   return NextResponse.json({
     success: true,
-    roles: currentRoles.includes("owner")
-      ? currentRoles
-      : [...currentRoles, "owner"],
+    roles: newRoles,
     activeRole: "owner",
     dashboardPath: getDashboardPath("owner"),
   });

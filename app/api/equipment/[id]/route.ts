@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getActiveRole } from "@/lib/session";
+import { getActiveRole, hasRole } from "@/lib/roles";
 import { db } from "@/lib/auth";
 import { userIdFilter } from "@/lib/users";
 import { ApiEquipment } from "@/lib/api-types";
@@ -80,7 +80,13 @@ export async function PATCH(
   const updates = body as Record<string, unknown>;
   const { id: _ignored, ...safeUpdates } = updates;
   const userId = session.user.id;
-  const isAdmin = getActiveRole(session.user) === "admin";
+  const roles: string[] = Array.isArray(session.user.roles) ? session.user.roles : [];
+  const activeRole = getActiveRole(session.user);
+  const isAdmin = hasRole(roles, "admin") && activeRole === "admin";
+  console.log(
+    "[AUTH] equipment/[id] PATCH:",
+    { id: session.user.id, email: session.user.email, activeRole, roles, targetId: id },
+  );
 
   // Fetch the listing first so we can authorize on *ownership*, not just
   // active role. An owner can edit their own listing whether their active

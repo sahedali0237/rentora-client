@@ -20,16 +20,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
-import { getDashboardPath } from "@/lib/roles";
+import { getDashboardPath, getActiveRole, type Role } from "@/lib/roles";
+import { useSessionUser } from "@/lib/use-session-user";
 import { UserAvatar } from "@/components/user-avatar";
-
-type RoleSwitcherUser = {
-  name: string;
-  email: string;
-  image?: string | null;
-  roles: string[];
-  activeRole: string;
-};
 
 type SwitcherApiResult = {
   success?: boolean;
@@ -39,22 +32,32 @@ type SwitcherApiResult = {
 
 /**
  * Avatar dropdown in the navbar: shows the current mode as a badge and
- * lets a user switch between Renter and Owner modes (Fiverr-style).
- * Admin accounts get no switch options at all.
+ * lets a user switch between modes they actually hold.
+ *
+ * Authorization is always enforced server-side by the role switch / become
+ * owner endpoints; this component only decides what to *display*.
+ *
+ * - Admin accounts: see only "Admin mode", no switch options.
+ * - Multi-role accounts (e.g. ["renter", "owner"]): see options for each
+ *   role they hold.
+ * - Single-role accounts: see only their own mode.
  */
-export default function RoleSwitcher({ user }: { user: RoleSwitcherUser }) {
+export default function RoleSwitcher() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
-  const isAdmin = user.roles.includes("admin");
-  const isOwner = user.roles.includes("owner");
-  const activeRole = isAdmin ? "admin" : user.activeRole === "owner" && isOwner ? "owner" : "renter";
+  const { user } = useSessionUser();
+  if (!user) return null;
+
+  const roles: string[] = Array.isArray(user.roles) ? user.roles : [];
+  const isAdmin = roles.includes("admin");
+  const isOwner = roles.includes("owner");
+  const activeRole: Role = getActiveRole(user);
   const isAdminActive = activeRole === "admin";
-  // Owner-only users keep the owner dashboard without a renter option.
-  const canChooseOwner = !isAdminActive && (!isOwner || activeRole !== "owner");
-  // "Renter" is the default role every account starts with, so any
-  // non-admin user who is currently in Owner mode can switch back to Renter.
-  const canSwitchToRenter = !isAdminActive && activeRole !== "renter";
+
+  // Admin accounts never get switch options — admin is not switchable.
+  const showOwnerOption = !isAdminActive && (!isOwner || activeRole !== "owner");
+  const showRenterOption = !isAdminActive && activeRole !== "renter" && roles.includes("renter");
 
   const badge = isAdminActive
     ? "Admin mode"
@@ -178,7 +181,7 @@ export default function RoleSwitcher({ user }: { user: RoleSwitcherUser }) {
           Dashboard
         </DropdownMenuItem>
 
-        {canChooseOwner && (
+        {showOwnerOption && (
           <DropdownMenuItem
             disabled={pending}
             onClick={() => (isOwner ? switchRole("owner") : becomeOwner())}
@@ -188,7 +191,7 @@ export default function RoleSwitcher({ user }: { user: RoleSwitcherUser }) {
           </DropdownMenuItem>
         )}
 
-        {canSwitchToRenter && (
+        {showRenterOption && (
           <DropdownMenuItem
             disabled={pending}
             onClick={() => switchRole("renter")}

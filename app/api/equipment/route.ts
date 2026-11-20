@@ -2,9 +2,9 @@ import { headers } from "next/headers";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getActiveRole } from "@/lib/session";
+import { getActiveRole, hasRole } from "@/lib/roles";
 import { db } from "@/lib/auth";
-import { userIdFilter, resolveCanonicalUserId } from "@/lib/users";
+import { userIdFilter, resolveCanonicalUserId, userRefFilter } from "@/lib/users";
 
 const equipmentCollection = () => db.collection("equipment");
 
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     if (!session) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
-    filter.ownerId = userIdFilter(await resolveCanonicalUserId(session.user.id));
+    filter.ownerId = userRefFilter(await resolveCanonicalUserId(session.user.id));
   } else if (email) {
     // Allow filtering by owner email (for My Equipment page)
     filter.ownerEmail = email;
@@ -96,10 +96,18 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
+    console.log("[AUTH] equipment POST: unauthenticated request");
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  if (session.user.activeRole !== "owner") {
+  const activeRole = session.user.activeRole;
+  const roles: string[] = Array.isArray(session.user.roles) ? session.user.roles : [];
+  console.log(
+    "[AUTH] equipment POST:",
+    { id: session.user.id, email: session.user.email, activeRole, roles },
+  );
+
+  if (activeRole !== "owner" || !roles.includes("owner")) {
     return NextResponse.json({ error: "Owner access required" }, { status: 403 });
   }
 
@@ -138,7 +146,7 @@ export async function POST(request: Request) {
   // Prevent duplicate listings: same owner cannot list the same equipment name twice.
   const escapedName = String(data.name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const existing = await equipmentCollection().findOne({
-    ownerId,
+    ownerId: userRefFilter(ownerId),
     name: { $regex: `^${escapedName}$`, $options: "i" },
   });
   if (existing) {
@@ -166,6 +174,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
+    console.log("[AUTH] equipment PATCH: unauthenticated request");
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
@@ -183,10 +192,15 @@ export async function PATCH(request: Request) {
   }
 
   const activeRole = session.user.activeRole;
+  const roles: string[] = Array.isArray(session.user.roles) ? session.user.roles : [];
   const userId = await resolveCanonicalUserId(session.user.id);
-  const isAdmin = getActiveRole(session.user) === "admin";
+  const isAdmin = hasRole(roles, "admin") && activeRole === "admin";
+  console.log(
+    "[AUTH] equipment PATCH:",
+    { id: session.user.id, email: session.user.email, activeRole, roles, targetId: id },
+  );
 
-  if (activeRole !== "owner" && !isAdmin) {
+  if (!isAdmin && (activeRole !== "owner" || !roles.includes("owner"))) {
     return NextResponse.json(
       { error: "Owner access required" },
       { status: 403 },
@@ -197,7 +211,7 @@ export async function PATCH(request: Request) {
     _id: userIdFilter(id),
   };
   if (activeRole === "owner") {
-    filter.ownerId = userIdFilter(userId);
+    filter.ownerId = userRefFilter(userId);
   }
 
   const result = await equipmentCollection().updateOne(
@@ -227,6 +241,7 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
+    console.log("[AUTH] equipment DELETE: unauthenticated request");
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
@@ -236,8 +251,14 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }
 
+  const activeRole = session.user.activeRole;
+  const roles: string[] = Array.isArray(session.user.roles) ? session.user.roles : [];
   const userId = await resolveCanonicalUserId(session.user.id);
-  const isAdmin = getActiveRole(session.user) === "admin";
+  const isAdmin = hasRole(roles, "admin") && activeRole === "admin";
+  console.log(
+    "[AUTH] equipment DELETE:",
+    { id: session.user.id, email: session.user.email, activeRole, roles, targetId: id },
+  );
 
   // Fetch the listing first so we can authorize on *ownership* or admin role.
   const doc = (await equipmentCollection().findOne({

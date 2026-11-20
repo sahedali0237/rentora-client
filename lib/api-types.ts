@@ -56,11 +56,14 @@ export type ApiBooking = {
   ownerId?: string;
   renterName?: string;
   ownerName?: string;
+  equipmentId?: string;
   equipmentName?: string;
   name?: string;
   startDate?: string;
   endDate?: string;
+  quantity?: number | string;
   amount?: number | string;
+  notes?: string;
   paymentStatus?: string;
   status?: string;
   createdAt?: string;

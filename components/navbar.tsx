@@ -6,8 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import ThemeToggle from "@/components/theme-toggle";
 import RoleSwitcher from "@/components/role-switcher";
-import { authClient } from "@/lib/auth-client";
-import { normalizeRole, type Role } from "@/lib/roles";
+import { useSessionUser } from "@/lib/use-session-user";
+import { getActiveRole, type Role } from "@/lib/roles";
 
 // Role-specific navigation links. Renter mode promotes browsing the
 // marketplace; owner mode promotes the owner workspace.
@@ -38,10 +38,10 @@ function linksForRole(role: Role) {
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { data: session, isPending } = authClient.useSession();
+  const { user: sessionUser, isPending } = useSessionUser();
 
-  const user = session?.user;
-  const activeRole: Role | null = user ? normalizeRole(user.activeRole) : null;
+  const user = sessionUser;
+  const activeRole: Role | null = user ? getActiveRole(user) : null;
   const navLinks = activeRole ? linksForRole(activeRole) : RENTER_LINKS;
 
   const toggleMenu = () => {
@@ -86,15 +86,7 @@ const Navbar = () => {
               <div className="h-9 w-9 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
             ) : user && activeRole ? (
               <>
-                <RoleSwitcher
-                  user={{
-                    name: user.name,
-                    email: user.email,
-                    image: user.image ?? null,
-                    roles: Array.isArray(user.roles) ? user.roles : [],
-                    activeRole: activeRole,
-                  }}
-                />
+                <RoleSwitcher />
               </>
             ) : (
               <>
@@ -163,15 +155,7 @@ const Navbar = () => {
                 >
                   All Equipment
                 </Link>
-                <RoleSwitcher
-                  user={{
-                    name: user.name,
-                    email: user.email,
-                    image: user.image ?? null,
-                    roles: Array.isArray(user.roles) ? user.roles : [],
-                    activeRole: activeRole,
-                  }}
-                />
+                <RoleSwitcher />
               </>
             ) : (
               <>

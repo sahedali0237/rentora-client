@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/auth";
+import { getActiveRole, hasRole } from "@/lib/roles";
 import { userIdFilter } from "@/lib/users";
 
 const reviewsCollection = () => db.collection("reviews");
@@ -81,10 +82,18 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
+    console.log("[AUTH] reviews POST: unauthenticated request");
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  if (session.user.activeRole !== "renter") {
+  const roles: string[] = Array.isArray(session.user.roles) ? session.user.roles : [];
+  const activeRole = getActiveRole(session.user);
+  console.log(
+    "[AUTH] reviews POST:",
+    { id: session.user.id, email: session.user.email, activeRole, roles },
+  );
+
+  if (activeRole !== "renter" || !roles.includes("renter")) {
     return NextResponse.json(
       { error: "Renter access required" },
       { status: 403 },
@@ -155,10 +164,18 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
+    console.log("[AUTH] reviews PATCH: unauthenticated request");
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  if (session.user.activeRole !== "renter") {
+  const roles: string[] = Array.isArray(session.user.roles) ? session.user.roles : [];
+  const activeRole = getActiveRole(session.user);
+  console.log(
+    "[AUTH] reviews PATCH:",
+    { id: session.user.id, email: session.user.email, activeRole, roles },
+  );
+
+  if (activeRole !== "renter" || !roles.includes("renter")) {
     return NextResponse.json(
       { error: "Renter access required" },
       { status: 403 },
@@ -220,10 +237,18 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
+    console.log("[AUTH] reviews DELETE: unauthenticated request");
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  if (session.user.activeRole !== "renter") {
+  const roles: string[] = Array.isArray(session.user.roles) ? session.user.roles : [];
+  const activeRole = getActiveRole(session.user);
+  console.log(
+    "[AUTH] reviews DELETE:",
+    { id: session.user.id, email: session.user.email, activeRole, roles },
+  );
+
+  if (activeRole !== "renter" || !roles.includes("renter")) {
     return NextResponse.json(
       { error: "Renter access required" },
       { status: 403 },
