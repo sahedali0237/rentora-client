@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { BookingReviewButton } from "@/components/booking-review-button";
+import { PayBookingButton } from "@/components/pay-booking-button";
+import { toast } from "react-toastify";
 import type {
   ApiBooking,
   ApiEquipment,
@@ -17,9 +19,9 @@ export type RentalRow = {
 };
 
 /**
- * Client component that renders the My Rentals table with review buttons.
- * Kept as a separate client component so that the parent page (a RSC)
- * doesn't have to be a client component.
+ * Client component that renders the My Rentals table with payment and
+ * review actions. Kept as a separate client component so that the parent
+ * page (a RSC) doesn't have to be a client component.
  */
 export function MyRentalsTable({
   initialRows,
@@ -49,6 +51,75 @@ export function MyRentalsTable({
       ),
     );
   }, []);
+
+  /**
+   * Handle Stripe Checkout return: when the URL has ?paid=1, show a
+   * "Payment successful" toast, refetch the bookings so the badges and
+   * actions update to the paid/confirmed state, and clean up the query
+   * param. Because the Stripe webhook may take a moment to mark the
+   * booking as paid on the backend, if the refetched rows are still
+   * showing an unpaid booking, schedule one more refetch ~2s later.
+   */
+  const [fetchedOnce, setFetchedOnce] = useState(false);
+
+  const refetchBookings = useCallback(async () => {
+    try {
+      const res = await fetch("/api/bookings", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      const fresh: ApiBooking[] = data.bookings || [];
+      // Map the fresh bookings back into rows, preserving the row status
+      // normalization from the initial page (the server RSC did this for
+      // us on first load).
+      setRows((prev) =>
+        fresh.map((b) => {
+          const rawStatus = String(b.status || "").toLowerCase();
+          const status: BookingStatus =
+            rawStatus === "pending" ||
+            rawStatus === "confirmed" ||
+            rawStatus === "active" ||
+            rawStatus === "completed" ||
+            rawStatus === "cancelled"
+              ? rawStatus
+              : "pending";
+          const existing = prev.find(
+            (r) => r.booking._id === b._id || r.booking.id === b.id,
+          );
+          return {
+            booking: b,
+            status,
+            reviewed: existing?.reviewed ?? false,
+          };
+        }),
+      );
+    } catch {
+      // Fail silently — the table will keep showing the last-known state.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (fetchedOnce) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("paid") !== "1") return;
+    setFetchedOnce(true);
+
+    toast.success("Payment successful");
+
+    // Clean the query param without a full reload so the user doesn't
+    // re-trigger this flow.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("paid");
+    window.history.replaceState({}, "", url.toString());
+
+    // First refetch: by the time the redirect lands, the webhook has
+    // usually already fired, but not always.
+    void refetchBookings();
+    // Second refetch ~2s later to cover the slow webhook case.
+    const timer = setTimeout(() => {
+      void refetchBookings();
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [fetchedOnce, refetchBookings]);
 
   const columns = [
     { key: "equipment", label: "Equipment" },
@@ -97,14 +168,12 @@ export function MyRentalsTable({
         if (key === "amount") return `$${b.amount || 0}`;
         if (key === "paymentStatus") {
           // Read the actual payment status from the booking (the column key
-          // does not map to a property on the row object). Default to "Unpaid"
-          // when missing so we never show "undefined".
-          const payment = String(b.paymentStatus || "").toLowerCase();
+          // does not map to a property on the row object). Default to
+          // "unpaid" when missing so we never show "undefined".
+          const payment = String(b.paymentStatus || "unpaid").toLowerCase();
           const variant = payment === "paid" ? "success" : "secondary";
-          const label =
-            payment === "paid" ? "Paid" : payment ? payment : "Unpaid";
           const display =
-            label.charAt(0).toUpperCase() + label.slice(1);
+            payment.charAt(0).toUpperCase() + payment.slice(1);
           return (
             <Badge variant={variant}>
               <span>{display}</span>
@@ -138,18 +207,45 @@ export function MyRentalsTable({
           );
         }
         if (key === "actions") {
+          const payment = String(b.paymentStatus || "unpaid").toLowerCase();
+          const status = String(rentalRow.status || "").toLowerCase();
+          const isUnpaid = payment !== "paid";
+          const isCancelled =
+            status === "cancelled" || status === "canceled";
+          const isConfirmed = status === "confirmed";
+
+          // Cancelled bookings show no actions.
+          if (isCancelled) {
+            return null;
+          }
+
+          const isReviewed =
+            (b._id ? reviewedIds.has(b._id) : false) ||
+            (b.id ? reviewedIds.has(b.id) : false) ||
+            rentalRow.reviewed;
+
+          const showPay = isUnpaid;
+          const showReview = isConfirmed;
+
+          if (!showPay && !showReview) {
+            // Unpaid but not confirmed yet — nothing actionable besides
+            // paying, which is covered below.
+            return null;
+          }
+
           return (
-            <BookingReviewButton
-              booking={b}
-              equipment={equipment}
-              reviewed={
-                (b._id ? reviewedIds.has(b._id) : false) ||
-                (b.id ? reviewedIds.has(b.id) : false) ||
-                rentalRow.reviewed
-              }
-              status={rentalRow.status}
-              onReviewed={handleReviewed}
-            />
+            <div className="flex items-center gap-2">
+              {showPay && <PayBookingButton booking={b} />}
+              {showReview && (
+                <BookingReviewButton
+                  booking={b}
+                  equipment={equipment}
+                  reviewed={isReviewed}
+                  status={rentalRow.status}
+                  onReviewed={handleReviewed}
+                />
+              )}
+            </div>
           );
         }
         return value as React.ReactNode;

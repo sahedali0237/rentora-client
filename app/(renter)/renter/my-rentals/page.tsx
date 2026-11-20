@@ -203,7 +203,7 @@ export default async function MyRentalsPage() {
           <StatCard
             title="Pending"
             value={statusCounts.pending}
-            subtitle="Awaiting approval"
+            subtitle="Awaiting payment"
             icon={Clock}
             color="amber"
           />

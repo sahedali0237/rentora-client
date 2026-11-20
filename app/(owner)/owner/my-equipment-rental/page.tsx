@@ -4,7 +4,17 @@ import { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { CheckCircle2, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { authClient } from "@/lib/auth-client";
 import type { ApiBooking } from "@/lib/api-types";
@@ -31,6 +41,9 @@ export default function MyEquipmentRentalPage() {
   const [bookings, setBookings] = useState<RentalRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Track which booking the cancel AlertDialog is open for (one at a time)
+  const [cancelTarget, setCancelTarget] = useState<RentalRow | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -112,6 +125,51 @@ export default function MyEquipmentRentalPage() {
     } catch (err) {
       console.error(`Error ${newStatus}ing booking:`, err);
       toast.error(err instanceof Error ? err.message : `Failed to ${newStatus} booking.`);
+    }
+  };
+
+  const handleCancelBooking = async (bookingId: string) => {
+    setCancelling(true);
+    try {
+      const res = await fetch(
+        `/api/bookings/${encodeURIComponent(bookingId)}/cancel`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+        },
+      );
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to cancel booking.");
+      }
+
+      const data = await res.json();
+      const updatedBooking = data.booking;
+
+      setBookings((prev) =>
+        prev.map((b) =>
+          b._id === bookingId
+            ? {
+                ...b,
+                status: String(
+                  updatedBooking?.status ?? "cancelled",
+                ).toLowerCase(),
+              }
+            : b,
+        ),
+      );
+
+      toast.success("Booking cancelled successfully.");
+      setCancelTarget(null);
+    } catch (err) {
+      console.error("Error cancelling booking:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to cancel booking.",
+      );
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -223,36 +281,52 @@ export default function MyEquipmentRentalPage() {
 
                     <div className="flex items-center gap-2">
                       {isPaid ? (
-                        <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
-                          <CheckCircle2 className="h-4 w-4" /> <span>Paid</span>
-                        </div>
-                      ) : isPending ? (
                         <>
-                          <Button
-                            onClick={() => handleStatusChange(booking._id, "confirmed")}
-                            variant="default"
-                            size="sm"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs"
-                          >
-                            Confirm
-                          </Button>
-                          <Button
-                            onClick={() => handleStatusChange(booking._id, "rejected")}
-                            variant="destructive"
-                            size="sm"
-                            className="px-3 py-1.5 text-xs"
-                          >
-                            Reject
-                          </Button>
+                          <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
+                            <CheckCircle2 className="h-4 w-4" /> <span>Paid</span>
+                          </div>
+                          <Badge variant="success" className="text-xs px-2 py-0.5">
+                            Paid
+                          </Badge>
                         </>
-                      ) : booking.status === "confirmed" ? (
-                        <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
-                          <CheckCircle2 className="h-4 w-4" /> <span>Confirmed</span>
-                        </div>
                       ) : (
-                        <div className="flex items-center gap-1 text-rose-600 dark:text-rose-400 text-sm font-medium">
-                          <XCircle className="h-4 w-4" /> <span>Rejected</span>
-                        </div>
+                        <>
+                          {booking.status !== "cancelled" &&
+                            booking.status !== "canceled" && (
+                              <Button
+                                onClick={() =>
+                                  setCancelTarget(booking)
+                                }
+                                variant="destructive"
+                                size="sm"
+                                className="px-3 py-1.5 text-xs"
+                                disabled={cancelling}
+                              >
+                                <X className="h-3.5 w-3.5 mr-1" />
+                                Cancel
+                              </Button>
+                            )}
+                          {isPending && (
+                            <>
+                              <Button
+                                onClick={() => handleStatusChange(booking._id, "confirmed")}
+                                variant="default"
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs"
+                              >
+                                Confirm
+                              </Button>
+                              <Button
+                                onClick={() => handleStatusChange(booking._id, "rejected")}
+                                variant="destructive"
+                                size="sm"
+                                className="px-3 py-1.5 text-xs"
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -260,6 +334,51 @@ export default function MyEquipmentRentalPage() {
               );
             })}
           </div>
+        )}
+
+        {/* Cancel confirmation dialog */}
+        {cancelTarget && (
+          <AlertDialog
+            open={cancelTarget !== null}
+            onOpenChange={(open) => {
+              if (!open) setCancelTarget(null);
+            }}
+          >
+            <AlertDialogBody>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Cancel booking?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cancel the booking for{" "}
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    "{cancelTarget.equipmentName}"
+                  </span>{" "}
+                  from{" "}
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {cancelTarget.renterName}
+                  </span>
+                  ? This will mark the booking as cancelled and cannot be
+                  undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel
+                  onClick={() => setCancelTarget(null)}
+                  disabled={cancelling}
+                >
+                  Keep Booking
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  onClick={() => handleCancelBooking(cancelTarget._id)}
+                  disabled={cancelling}
+                >
+                  {cancelling ? "Cancelling…" : "Cancel Booking"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogBody>
+          </AlertDialog>
         )}
       </div>
     </DashboardLayout>
