@@ -25,9 +25,14 @@ export default async function MyEquipmentPage() {
   if (!session) return null;
 
   const role = getActiveRole(session.user);
+  const ownerEmail = session.user.email;
 
-  const res = await apiFetch("/api/equipment?mine=true");
+  const url = `/api/equipment?email=${encodeURIComponent(ownerEmail)}`;
+
+  const res = await apiFetch(url);
+  
   const data = await res.json();
+
   const equipment: EquipmentTableRow[] = (data.equipment || []).map((e: ApiEquipment) => {
     const row: EquipmentRow = {
       name: e.name || "Untitled",
@@ -85,6 +90,7 @@ export default async function MyEquipmentPage() {
                   status={e.status}
                   name={e.name}
                   canEdit
+                  canDelete
                 />
               );
             }

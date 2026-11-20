@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
 type EquipmentForm = {
@@ -54,6 +55,7 @@ const labelClass =
   "block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5";
 
 export function AddEquipmentForm() {
+  const router = useRouter();
   const [form, setForm] = useState<EquipmentForm>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
 
@@ -148,12 +150,14 @@ export function AddEquipmentForm() {
         } catch {
           // ignore non-JSON error bodies
         }
-        throw new Error(`Server responded with ${response.status}: ${errorMessage}`);
+        throw new Error(errorMessage || `Server responded with ${response.status}`);
       }
 
       const data = await response.json();
       console.log("Saved to MongoDB:", data);
       toast.success("Equipment listed successfully!");
+      router.push("/owner/my-equipment");
+      router.refresh();
     } catch (error) {
       console.error("Failed to add equipment:", error);
       toast.error(error instanceof Error ? error.message : "Failed to add equipment");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { EquipmentCard, EquipmentCardProps } from "@/components/equipment-card";
 import { ApiEquipment } from "@/lib/api-types";
@@ -106,7 +106,7 @@ export default function AllEquipmentPageClient() {
       params.set("sort", filters.sort);
       params.set("order", filters.order);
       params.set("page", filters.page);
-      params.set("limit", "12");
+      params.set("limit", "6");
 
       const res = await fetch(`/api/equipment?${params.toString()}`, {
         cache: "no-store",
@@ -304,28 +304,70 @@ export default function AllEquipmentPageClient() {
       {totalPages > 1 && (
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="text-sm text-gray-600 dark:text-zinc-400">
-            Page {filters.page} of {totalPages}
+            Page {filters.page} of {totalPages} — {total} results
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* Previous button */}
             <button
               onClick={() => {
                 const p = Math.max(parseInt(filters.page, 10) - 1, 1);
                 updateFilter("page", String(p));
               }}
               disabled={parseInt(filters.page, 10) <= 1}
-              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+              className="px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+              aria-label="Previous page"
             >
-              Prev
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
             </button>
+
+            {/* Page numbers */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((pageNum) => {
+                const currentPage = parseInt(filters.page, 10);
+                // Show first page, last page, current page, and ±2 around current
+                return (
+                  pageNum === 1 ||
+                  pageNum === totalPages ||
+                  pageNum === currentPage ||
+                  (pageNum >= currentPage - 2 && pageNum <= currentPage + 2)
+                );
+              })
+              .map((pageNum, idx, arr) => (
+                <React.Fragment key={pageNum}>
+                  {/* Add ellipsis if there's a gap */}
+                  {idx > 0 && pageNum - arr[idx - 1] > 1 && (
+                    <span className="px-2 py-2 text-gray-400 dark:text-zinc-500">...</span>
+                  )}
+                  <button
+                    onClick={() => updateFilter("page", String(pageNum))}
+                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                      pageNum === parseInt(filters.page, 10)
+                        ? "bg-amber-500 text-white"
+                        : "border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-800/50"
+                    }`}
+                    aria-label={`Page ${pageNum}`}
+                    aria-current={pageNum === parseInt(filters.page, 10) ? "page" : undefined}
+                  >
+                    {pageNum}
+                  </button>
+                </React.Fragment>
+              ))}
+
+            {/* Next button */}
             <button
               onClick={() => {
                 const p = Math.min(parseInt(filters.page, 10) + 1, totalPages);
                 updateFilter("page", String(p));
               }}
               disabled={parseInt(filters.page, 10) >= totalPages}
-              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+              className="px-3 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+              aria-label="Next page"
             >
-              Next
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         </div>

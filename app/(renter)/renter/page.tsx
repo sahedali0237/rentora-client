@@ -11,13 +11,16 @@ async function getRenterStats(userId: string) {
   const res = await apiFetch("/api/bookings");
   const data = await res.json();
 
-  const bookings: ApiBooking[] = (data.bookings || []).filter(
-    (b: ApiBooking) => b.renterId === userId,
-  );
+  void userId;
+  const bookings: ApiBooking[] = data.bookings || [];
 
   const totalRentals = bookings.length;
-  const activeRentals = bookings.filter((b) => b.status === "active" || b.status === "pending").length;
-  const completedRentals = bookings.filter((b) => b.status === "completed").length;
+  const activeRentals = bookings.filter(
+    (b) => b.status === "active" || b.status === "pending",
+  ).length;
+  const completedRentals = bookings.filter(
+    (b) => b.status === "completed",
+  ).length;
   const totalSpent = bookings
     .filter((b) => b.paymentStatus === "paid")
     .reduce((sum: number, b) => sum + (Number(b.amount) || 0), 0);
@@ -33,11 +36,17 @@ export default async function RenterDashboardPage() {
   const stats = await getRenterStats(session.user.id);
 
   return (
-    <DashboardLayout role={role} userName={session.user.name} userEmail={session.user.email}>
+    <DashboardLayout
+      role={role}
+      userName={session.user.name}
+      userEmail={session.user.email}
+    >
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Renter Overview</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Renter Overview
+            </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Browse equipment, track your rentals, and manage your favorites.
             </p>
@@ -85,24 +94,36 @@ export default async function RenterDashboardPage() {
             className="rounded-xl border border-gray-200 bg-white p-6 hover:bg-gray-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-colors"
           >
             <CreditCard className="mb-3 h-6 w-6 text-gray-400" aria-hidden />
-            <h3 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">My Rentals</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Track your active bookings</p>
+            <h3 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
+              My Rentals
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Track your active bookings
+            </p>
           </a>
           <a
             href="/renter/favorites"
             className="rounded-xl border border-gray-200 bg-white p-6 hover:bg-gray-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-colors"
           >
             <Star className="mb-3 h-6 w-6 text-gray-400" aria-hidden />
-            <h3 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">Favorites</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Your saved equipment</p>
+            <h3 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
+              Favorites
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Your saved equipment
+            </p>
           </a>
           <a
             href="/renter/profile"
             className="rounded-xl border border-gray-200 bg-white p-6 hover:bg-gray-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-colors"
           >
             <Clock className="mb-3 h-6 w-6 text-gray-400" aria-hidden />
-            <h3 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">Profile</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Update your information</p>
+            <h3 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
+              Profile
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Update your information
+            </p>
           </a>
         </div>
       </div>

@@ -34,18 +34,19 @@ async function OwnerDashboard() {
   const role = getActiveRole(session.user);
   const userId = session.user.id;
 
-  const equipRes = await apiFetch("/api/equipment");
+  const equipRes = await apiFetch("/api/equipment?mine=true");
   const equipData = await equipRes.json();
 
   const bookRes = await apiFetch("/api/bookings");
   const bookData = await bookRes.json();
 
-  const equipment: ApiEquipment[] = (equipData.equipment || []).filter(
-    (e: ApiEquipment) => e.ownerId === userId,
-  );
-  const bookings: ApiBooking[] = (bookData.bookings || []).filter(
-    (b: ApiBooking) => b.ownerId === userId,
-  );
+  // The /api/equipment?mine=true and /api/bookings endpoints already scope
+  // results to the current user server-side (by ownerId / activeRole), so
+  // filtering again on the client with a strict string compare would drop
+  // every record when ownerId is stored/serialized differently (e.g.
+  // ObjectId vs string). Trust the API's scoping.
+  const equipment: ApiEquipment[] = equipData.equipment || [];
+  const bookings: ApiBooking[] = bookData.bookings || [];
 
   const totalEquipment = equipment.length;
   const completedRentals = bookings.filter((b) => b.status === "completed").length;

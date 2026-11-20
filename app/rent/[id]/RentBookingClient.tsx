@@ -36,6 +36,9 @@ export default function RentBookingClient() {
     fetchEquipment();
   }, [equipmentId]);
 
+  // Earliest allowed start date is today
+  const todayStr = new Date().toISOString().split("T")[0];
+
   const fetchEquipment = async () => {
     try {
       const res = await fetch(
@@ -66,6 +69,11 @@ export default function RentBookingClient() {
 
     if (!form.startDate || !form.endDate) {
       toast.error("Please select start and end dates.");
+      return;
+    }
+
+    if (form.startDate < todayStr) {
+      toast.error("Start date cannot be before today.");
       return;
     }
 
@@ -246,6 +254,7 @@ export default function RentBookingClient() {
                   <input
                     type="date"
                     value={form.startDate}
+                    min={todayStr}
                     onChange={(e) => setForm({ ...form, startDate: e.target.value })}
                     required
                     className="w-full h-10 px-3.5 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
@@ -259,6 +268,7 @@ export default function RentBookingClient() {
                   <input
                     type="date"
                     value={form.endDate}
+                    min={form.startDate || todayStr}
                     onChange={(e) => setForm({ ...form, endDate: e.target.value })}
                     required
                     className="w-full h-10 px-3.5 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"

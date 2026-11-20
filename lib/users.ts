@@ -30,3 +30,22 @@ export function userIdFilter(id: string): ObjectId | string {
   }
   return id;
 }
+
+/**
+ * Resolve the canonical "owner/renter" identifier for a Better Auth user id.
+ *
+ * Better Auth's session exposes `user.id` (the user document's `id` field),
+ * which is NOT always the Mongo `_id`. This collection stores `renterId` /
+ * `ownerId` by the user's Mongo `_id` (as a string). To make reads and
+ * writes agree, we look the user up by session id and return their `_id`
+ * as a string. Falls back to the raw id when the lookup is impossible
+ * (e.g. no DB access) so callers still get a best-effort value.
+ */
+export async function resolveCanonicalUserId(
+  sessionId: string,
+): Promise<string> {
+  const user = await usersCollection().findOne({
+    _id: userIdFilter(sessionId),
+  });
+  return user?._id?.toString() ?? sessionId;
+}

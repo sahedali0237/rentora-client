@@ -25,9 +25,12 @@ export default async function MyEquipmentRentalPage() {
 
   const res = await apiFetch("/api/bookings");
   const data = await res.json();
-  const rentals: RentalRow[] = (data.bookings || [])
-    .filter((b: ApiBooking) => b.ownerId === session.user.id)
-    .map((b: ApiBooking) => ({
+  // The /api/bookings endpoint already scopes results to the current user
+  // server-side (by activeRole: renter -> renterId, owner -> ownerId), so
+  // filtering again on the client with a strict string compare would drop
+  // every record when ownerId is stored/serialized in a different form
+  // (e.g. ObjectId vs string). Trust the API's scoping.
+  const rentals: RentalRow[] = (data.bookings || []).map((b: ApiBooking) => ({
       customer: b.renterName || "Unknown",
       equipment: b.equipmentName || b.name || "Untitled",
       duration: `${b.startDate || "-"} to ${b.endDate || "-"}`,

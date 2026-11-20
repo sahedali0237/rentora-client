@@ -22,6 +22,8 @@ type EquipmentActionsProps = {
   canEdit?: boolean;
   /** Admins can terminate any listing; owners cannot. */
   canTerminate?: boolean;
+  /** Owners can delete their own listings. */
+  canDelete?: boolean;
 };
 
 export function EquipmentActions({
@@ -31,6 +33,7 @@ export function EquipmentActions({
   canApprove = false,
   canEdit = false,
   canTerminate = false,
+  canDelete = false,
 }: EquipmentActionsProps) {
   const [pending, setPending] = useState(false);
   const [terminating, setTerminating] = useState(false);
@@ -62,7 +65,7 @@ export function EquipmentActions({
     }
   };
 
-  const handleTerminate = async () => {
+  const handleDelete = async () => {
     setTerminating(true);
     try {
       const res = await fetch(`/api/equipment?id=${encodeURIComponent(id)}`, {
@@ -82,6 +85,9 @@ export function EquipmentActions({
       setTerminating(false);
     }
   };
+
+  const showDelete = canTerminate || canDelete;
+  const isAdminAction = canTerminate;
 
   return (
     <div className="flex items-center gap-2">
@@ -104,23 +110,23 @@ export function EquipmentActions({
           <Pencil className="h-4 w-4" /> Edit
         </button>
       )}
-      {canTerminate && (
+      {showDelete && (
         <button
           type="button"
           onClick={() => setTerminateOpen(true)}
           disabled={terminating}
           className={dangerButtonClass}
         >
-          <Trash2 className="h-4 w-4" /> Terminate
+          <Trash2 className="h-4 w-4" /> {isAdminAction ? "Terminate" : "Delete"}
         </button>
       )}
       <ConfirmDialog
         isOpen={terminateOpen}
-        onConfirm={handleTerminate}
+        onConfirm={handleDelete}
         onCancel={() => setTerminateOpen(false)}
-        title={canTerminate ? "Terminate Listing" : "Delete Equipment"}
+        title={isAdminAction ? "Terminate Listing" : "Delete Equipment"}
         equipmentName={name}
-        confirmLabel={canTerminate ? "Terminate" : "Delete"}
+        confirmLabel={isAdminAction ? "Terminate" : "Delete"}
         cancelLabel="Cancel"
         destructive
       />

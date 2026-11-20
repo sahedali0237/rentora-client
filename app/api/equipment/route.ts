@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getActiveRole } from "@/lib/session";
 import { db } from "@/lib/auth";
-import { userIdFilter } from "@/lib/users";
+import { userIdFilter, resolveCanonicalUserId } from "@/lib/users";
 
 const equipmentCollection = () => db.collection("equipment");
 
@@ -18,6 +18,7 @@ export async function GET(request: Request) {
   const skip = (page - 1) * limit;
 
   const mine = searchParams.get("mine");
+  const email = searchParams.get("email");
 
   const session = await auth.api.getSession({ headers: await headers() });
   const isAdmin = session?.user ? getActiveRole(session.user) === "admin" : false;
@@ -28,7 +29,10 @@ export async function GET(request: Request) {
     if (!session) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
-    filter.ownerId = session.user.id;
+    filter.ownerId = userIdFilter(await resolveCanonicalUserId(session.user.id));
+  } else if (email) {
+    // Allow filtering by owner email (for My Equipment page)
+    filter.ownerEmail = email;
   } else if (!isAdmin) {
     // Public / non-admin viewers only see approved listings.
     filter.status = { $regex: /^approved$/i };
@@ -129,9 +133,24 @@ export async function POST(request: Request) {
     );
   }
 
+  const ownerId = await resolveCanonicalUserId(session.user.id);
+
+  // Prevent duplicate listings: same owner cannot list the same equipment name twice.
+  const escapedName = String(data.name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const existing = await equipmentCollection().findOne({
+    ownerId,
+    name: { $regex: `^${escapedName}$`, $options: "i" },
+  });
+  if (existing) {
+    return NextResponse.json(
+      { error: "You already have an equipment listing with this name." },
+      { status: 409 },
+    );
+  }
+
   const doc = {
     ...data,
-    ownerId: session.user.id,
+    ownerId,
     ownerName: session.user.name,
     ownerEmail: session.user.email,
     status: "pending",
@@ -164,7 +183,7 @@ export async function PATCH(request: Request) {
   }
 
   const activeRole = session.user.activeRole;
-  const userId = session.user.id;
+  const userId = await resolveCanonicalUserId(session.user.id);
   const isAdmin = getActiveRole(session.user) === "admin";
 
   if (activeRole !== "owner" && !isAdmin) {
@@ -217,7 +236,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }
 
-  const userId = session.user.id;
+  const userId = await resolveCanonicalUserId(session.user.id);
   const isAdmin = getActiveRole(session.user) === "admin";
 
   // Fetch the listing first so we can authorize on *ownership* or admin role.
@@ -231,7 +250,9 @@ export async function DELETE(request: Request) {
 
   const isOwner =
     !!userId &&
-    (doc.ownerId === userId || doc.ownerId?.toString() === userId.toString());
+    (doc.ownerId === userId ||
+      doc.ownerId?.toString() === userId.toString() ||
+      userIdFilter(doc.ownerId as string) === userIdFilter(userId));
 
   if (!isAdmin && !isOwner) {
     return NextResponse.json(

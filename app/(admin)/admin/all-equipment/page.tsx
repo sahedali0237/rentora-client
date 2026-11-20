@@ -2,11 +2,14 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { EquipmentActions } from "@/components/table-actions";
+import { Pagination } from "@/components/pagination";
 import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
 import type { ApiEquipment } from "@/lib/api-types";
+import type { Metadata } from "next";
 
 export const instant = false;
+export const metadata: Metadata = { title: "All Equipment" };
 
 type EquipmentRow = {
   name: string;
@@ -17,13 +20,20 @@ type EquipmentRow = {
   id: string;
 };
 
-export default async function AllEquipmentPage() {
+type AllEquipmentPageProps = {
+  searchParams: Promise<{ page?: string }>;
+};
+
+export default async function AllEquipmentPage({ searchParams }: AllEquipmentPageProps) {
   const session = await getSession();
   if (!session) return null;
 
   const role = getActiveRole(session.user);
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(parseInt(pageParam || "1", 10), 1);
+  const limit = 6;
 
-  const res = await apiFetch("/api/equipment");
+  const res = await apiFetch(`/api/equipment?page=${page}&limit=${limit}`);
   const data = await res.json();
   const equipment: EquipmentRow[] = (data.equipment || []).map((e: ApiEquipment) => ({
     name: e.name || "Untitled",
@@ -33,6 +43,8 @@ export default async function AllEquipmentPage() {
     owner: e.ownerName || "Unknown",
     id: e._id || e.id || "",
   }));
+
+  const totalPages: number = data.totalPages ?? 1;
 
   const columns = [
     { key: "name", label: "Equipment" },
@@ -70,7 +82,7 @@ export default async function AllEquipmentPage() {
               return <Badge variant={variant} className="capitalize"><span>{String(value)}</span></Badge>;
             }
             if (key === "action") {
-              const e = row as EquipmentRow;
+              const e = row as unknown as EquipmentRow;
               return (
                 <EquipmentActions
                   id={e.id}
@@ -84,6 +96,10 @@ export default async function AllEquipmentPage() {
             return value as React.ReactNode;
           }}
         />
+
+        {totalPages > 1 && (
+          <Pagination currentPage={page} totalPages={totalPages} basePath="/admin/all-equipment" />
+        )}
       </div>
     </DashboardLayout>
   );
