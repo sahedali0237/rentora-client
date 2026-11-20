@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { authClient } from "@/lib/auth-client";
+import { SocialLoginButtons } from "@/components/social-login-buttons";
 
 export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -294,6 +295,19 @@ export default function SignUpPage() {
           {loading ? "Creating account..." : "Register"}
         </button>
       </form>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-zinc-800" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-zinc-950 px-2 text-zinc-500">
+            Or continue with
+          </span>
+        </div>
+      </div>
+
+      <SocialLoginButtons />
 
       <p className="text-center text-sm text-zinc-400">
         Already have an account?{" "}

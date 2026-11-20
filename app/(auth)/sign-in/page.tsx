@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { authClient } from "@/lib/auth-client";
+import { SocialLoginButtons } from "@/components/social-login-buttons";
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -176,14 +177,7 @@ export default function SignInPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <button className="flex items-center justify-center py-2 px-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-sm font-medium text-white transition-colors">
-          Google
-        </button>
-        <button className="flex items-center justify-center py-2 px-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-sm font-medium text-white transition-colors">
-          GitHub
-        </button>
-      </div>
+      <SocialLoginButtons />
 
       <p className="text-center text-sm text-zinc-400">
         Don&apos;t have an account?{" "}
