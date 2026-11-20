@@ -128,3 +128,30 @@
     @apply font-sans;
   }
 }
+
+/* Auto-scrolling equipment marquee (see components/equipment-carousel.tsx).
+   The track holds two copies of the list and loops seamlessly at -50%.
+   `animation-play-state` is paused on hover via the `pause` utility. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+.pause {
+  animation-play-state: paused;
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
