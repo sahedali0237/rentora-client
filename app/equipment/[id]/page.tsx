@@ -4,18 +4,10 @@ import Link from "next/link";
 import { Star, MapPin, ChevronRight } from "lucide-react";
 import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
+import { resolveCanonicalUserId } from "@/lib/users";
 import { DeleteButton } from "@/components/equipment-delete-button";
-import { ApiEquipment, ApiReview, ApiReviewStats } from "@/lib/api-types";
+import type { ApiEquipment, ApiReview, ApiReviewStats } from "@/lib/api-types";
 import { ReviewList } from "@/components/reviews";
-
-type DetailsData = {
-  equipment: ApiEquipment;
-  reviews: ApiReview[];
-  stats: ApiReviewStats;
-  currentUserId: string | null;
-  isOwner: boolean;
-  userHasRented: boolean;
-};
 
 export const instant = false;
 
@@ -69,23 +61,15 @@ export default async function EquipmentDetailsPage({
     notFound();
   }
 
-  // Determine if current user has rented this equipment (for review eligibility).
-  let userHasRented = false;
-  if (currentUserId) {
-    try {
-      const bookingsRes = await apiFetch("/api/bookings");
-      if (bookingsRes.ok) {
-        const bookingsData = await bookingsRes.json();
-        const bookings = bookingsData.bookings || [];
-        userHasRented = bookings.some(
-          (b: any) =>
-            (b.equipmentId || b.name) === id && b.renterId === currentUserId,
-        );
-      }
-    } catch {
-      // Fail silently - userHasRented stays false
-    }
-  }
+  // The UI matches reviews against the *canonical* user id (the user document
+  // `_id`), which is what the API stores as `renterId`. Resolve it so the
+  // "you already reviewed this" / edit / delete states light up correctly.
+  //
+  // Renters can review a piece of equipment at any time — there is no
+  // completed-rental gate — so we no longer fetch the user's bookings here.
+  const reviewUserId = currentUserId
+    ? await resolveCanonicalUserId(currentUserId)
+    : null;
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -338,11 +322,10 @@ export default async function EquipmentDetailsPage({
         </h2>
         <ReviewList
           equipmentId={id}
-          currentUserId={currentUserId}
+          currentUserId={reviewUserId}
           initialReviews={reviews}
           initialStats={stats}
-          canSubmit={!!currentUserId}
-          userHasRented={userHasRented}
+          canSubmit={!!reviewUserId}
         />
       </section>
     </div>

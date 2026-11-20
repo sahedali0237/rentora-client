@@ -1,10 +1,11 @@
 "use client";
 
-import { Star, User, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { Star, User, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
-import { ApiReview, ApiReviewStats } from "@/lib/api-types";
+import { authClient } from "@/lib/auth-client";
+import type { ApiReview, ApiReviewStats } from "@/lib/api-types";
 
 interface ReviewItemProps {
   review: ApiReview;
@@ -280,7 +281,6 @@ interface ReviewListProps {
   initialReviews: ApiReview[];
   initialStats: ApiReviewStats;
   canSubmit: boolean;
-  userHasRented: boolean;
   onReviewSubmitted?: () => void;
 }
 
@@ -290,14 +290,16 @@ export function ReviewList({
   initialReviews,
   initialStats,
   canSubmit,
-  userHasRented,
   onReviewSubmitted,
 }: ReviewListProps) {
   const [reviews, setReviews] = useState<ApiReview[]>(initialReviews);
   const [stats, setStats] = useState<ApiReviewStats>(initialStats);
   const [submitting, setSubmitting] = useState(false);
   const [rating, setRating] = useState(0);
+  const [hoverStar, setHoverStar] = useState(0);
   const [comment, setComment] = useState("");
+
+  const { data: session } = authClient.useSession();
 
   // Find the current user's existing review
   const existingReview =
@@ -305,8 +307,15 @@ export function ReviewList({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comment.trim() || rating < 1 || rating > 5) {
-      toast.error("Please provide a rating and comment.");
+
+    if (!session?.user) {
+      toast.error("You must be logged in to submit a review.");
+      return;
+    }
+
+    // Rating is mandatory (1–5); comment is optional.
+    if (rating < 1 || rating > 5) {
+      toast.error("Please select a rating from 1 to 5 stars.");
       return;
     }
 
@@ -315,13 +324,22 @@ export function ReviewList({
       const res = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ equipmentId, rating, comment }),
+        body: JSON.stringify({
+          equipmentId,
+          rating,
+          comment: comment.trim(),
+          renterEmail: session.user.email,
+          renterName: session.user.name,
+          renterImage:
+            (session.user as { image?: string | null }).image || null,
+        }),
       });
 
       if (res.ok) {
-        toast.success("Review submitted.");
+        toast.success("Review submitted. Thank you!");
         setComment("");
         setRating(0);
+        setHoverStar(0);
         onReviewSubmitted?.();
         // Refresh
         const data = await fetch(
@@ -331,11 +349,21 @@ export function ReviewList({
         setReviews(result.reviews || []);
         setStats(result.stats || { averageRating: 0, totalReviews: 0 });
       } else {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.error || "Failed to submit review.");
+        let message = "Failed to submit review.";
+        try {
+          const err = await res.json();
+          if (err?.error) message = err.error;
+          else if (err?.message) message = err.message;
+        } catch {
+          /* body was not JSON */
+        }
+        if (res.status === 409 || /already/i.test(message)) {
+          message = "You have already reviewed this equipment.";
+        }
+        toast.error(message);
       }
     } catch {
-      toast.error("Failed to submit review.");
+      toast.error("Network error: could not reach the server.");
     } finally {
       setSubmitting(false);
     }
@@ -356,6 +384,8 @@ export function ReviewList({
       ...prev,
       totalReviews: Math.max(0, Number(prev.totalReviews) - 1),
     }));
+    // After deleting your own review, you're allowed to submit a new one.
+    handleRatingChange();
   };
 
   return (
@@ -364,25 +394,30 @@ export function ReviewList({
         <ReviewStats stats={stats} />
 
         <div className="flex flex-col gap-4 lg:flex-row items-end">
-          {canSubmit && !existingReview && userHasRented ? (
+          {canSubmit && !existingReview ? (
             <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full lg:w-80">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-700 dark:text-zinc-300">
                   Your Rating
                 </span>
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-0.5" role="radiogroup" aria-label="Rating">
                   {[1, 2, 3, 4, 5].map((s) => (
                     <button
                       key={s}
                       type="button"
+                      role="radio"
+                      aria-checked={s === rating}
+                      aria-label={`${s} star${s > 1 ? "s" : ""}`}
                       onClick={() => setRating(s)}
-                      className="p-0.5"
+                      onMouseEnter={() => setHoverStar(s)}
+                      onMouseLeave={() => setHoverStar(0)}
+                      className="p-0.5 focus:outline-none focus:ring-2 focus:ring-amber-500/40 rounded"
                     >
                       <Star
-                        className={`h-4 w-4 ${
-                          s <= rating
+                        className={`h-4 w-4 transition-colors ${
+                          s <= (hoverStar || rating)
                             ? "fill-yellow-400 text-yellow-400"
-                            : "text-gray-300 hover:text-yellow-400"
+                            : "text-gray-300"
                         }`}
                       />
                     </button>
@@ -396,7 +431,7 @@ export function ReviewList({
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Share your rental experience..."
               />
-              <Button type="submit" disabled={submitting || !rating || !comment.trim()} className="w-full text-sm">
+              <Button type="submit" disabled={submitting || !rating} className="w-full text-sm">
                 {submitting ? "Submitting..." : "Submit Review"}
               </Button>
             </form>
@@ -404,13 +439,6 @@ export function ReviewList({
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-400">
               <User className="h-4 w-4" />
               <span>You already reviewed this equipment.</span>
-            </div>
-          ) : !userHasRented ? (
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-400">
-              <AlertTriangle className="h-4 w-4" />
-              <span>
-                Reviews are only available after you have rented this equipment.
-              </span>
             </div>
           ) : null}
         </div>

@@ -34,7 +34,9 @@ export type ApiReview = {
   _id?: string;
   id?: string;
   equipmentId?: string;
+  bookingId?: string;
   renterId?: string;
+  renterEmail?: string;
   renterName?: string;
   renterImage?: string;
   rating?: number;
@@ -58,6 +60,7 @@ export type ApiBooking = {
   ownerName?: string;
   equipmentId?: string;
   equipmentName?: string;
+  equipmentImage?: string;
   name?: string;
   startDate?: string;
   endDate?: string;
@@ -68,6 +71,8 @@ export type ApiBooking = {
   status?: string;
   createdAt?: string;
 };
+
+export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled" | "active";
 
 export type ApiFavorite = {
   _id?: string;

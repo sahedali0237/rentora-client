@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/auth";
 import { getActiveRole, hasRole } from "@/lib/roles";
-import { userIdFilter } from "@/lib/users";
+import {
+  userIdFilter,
+  resolveCanonicalUserId,
+  userRefFilter,
+} from "@/lib/users";
 
 const reviewsCollection = () => db.collection("reviews");
 
@@ -58,7 +62,7 @@ export async function GET(request: Request) {
     reviews: reviews.map((r) => ({
       id: r._id?.toString(),
       equipmentId: r.equipmentId,
-      renterId: r.renterId,
+      renterId: r.renterId?.toString?.() ?? r.renterId,
       renterName: r.renterName,
       renterImage: r.renterImage,
       rating: r.rating,
@@ -125,22 +129,29 @@ export async function POST(request: Request) {
     );
   }
 
-  // Prevent duplicate reviews: one review per renter per equipment.
+  // Store the canonical user identifier (the user document's `_id`), which
+  // is the same value the bookings/other review paths use. This keeps the
+  // one-review-per-renter guarantee and the UI's "you already reviewed this"
+  // detection consistent regardless of which form submitted the review.
+  const renterId = await resolveCanonicalUserId(session.user.id);
+
+  // Prevent duplicate reviews: one review per renter per equipment. Match
+  // both the canonical id and any legacy ObjectId/stored form.
   const existing = await reviewsCollection().findOne({
     equipmentId,
-    renterId: session.user.id,
+    renterId: userRefFilter(renterId),
   });
 
   if (existing) {
     return NextResponse.json(
       { error: "You have already reviewed this equipment." },
-      { status: 400 },
+      { status: 409 },
     );
   }
 
   const doc = {
     equipmentId,
-    renterId: session.user.id,
+    renterId,
     renterName: session.user.name ?? "Anonymous",
     renterImage: session.user.image ?? null,
     rating: ratingNum,
@@ -212,9 +223,11 @@ export async function PATCH(request: Request) {
   }
   updates.updatedAt = new Date();
 
-  // Only the review author can update.
+  // Only the review author can update. Authorize against the canonical user
+  // id (with a legacy ObjectId fallback) so the author's own review matches.
+  const userId = await resolveCanonicalUserId(session.user.id);
   const _filterId: any = userIdFilter(String(id));
-  const _filterRenterId: any = userIdFilter(String(session.user.id));
+  const _filterRenterId: any = userRefFilter(userId);
   const result = await (reviewsCollection() as any).updateOne(
     { _id: _filterId, renterId: _filterRenterId },
     { $set: updates },
@@ -262,11 +275,13 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }
 
-  // Only the review author can delete.
+  // Only the review author can delete. Authorize against the canonical user
+  // id (with a legacy ObjectId fallback).
+  const userId = await resolveCanonicalUserId(session.user.id);
   const result = await (reviewsCollection() as any).deleteOne(
     {
       _id: userIdFilter(id),
-      renterId: userIdFilter(session.user.id),
+      renterId: userRefFilter(userId),
     },
   );
 
