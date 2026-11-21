@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { ArrowLeft, Trash2 as Trash2Icon } from "lucide-react";
@@ -47,6 +47,7 @@ export default function EditEquipmentClient() {
   const [equipment, setEquipment] = useState<ApiEquipment | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -105,6 +106,10 @@ export default function EditEquipmentClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Guard: prevent double-submit
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+
     setSubmitting(true);
     try {
       const res = await fetch(
@@ -133,14 +138,19 @@ export default function EditEquipmentClient() {
         toast.success("Equipment updated successfully!");
         router.push(`/equipment/${equipmentId}`);
         router.refresh();
+        // NOTE: submittingRef stays true — button remains disabled until navigation.
       } else {
         const err = await res.json().catch(() => ({}));
         toast.error(err.error || "Failed to update equipment.");
+        // Re-enable on error so the user can retry.
+        setSubmitting(false);
+        submittingRef.current = false;
       }
     } catch {
       toast.error("Failed to update equipment.");
-    } finally {
+      // Re-enable on error so the user can retry.
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 

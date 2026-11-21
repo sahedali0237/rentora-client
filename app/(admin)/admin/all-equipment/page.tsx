@@ -33,18 +33,28 @@ export default async function AllEquipmentPage({ searchParams }: AllEquipmentPag
   const page = Math.max(parseInt(pageParam || "1", 10), 1);
   const limit = 6;
 
-  const res = await apiFetch(`/api/equipment?page=${page}&limit=${limit}`);
-  const data = await res.json();
-  const equipment: EquipmentRow[] = (data.equipment || []).map((e: ApiEquipment) => ({
-    name: e.name || "Untitled",
-    category: e.category || "Uncategorized",
-    price: `$${e.price || 0}`,
-    status: e.status || "pending",
-    owner: e.ownerName || "Unknown",
-    id: e._id || e.id || "",
-  }));
-
-  const totalPages: number = data.totalPages ?? 1;
+  let equipment: EquipmentRow[] = [];
+  let totalPages = 1;
+  try {
+    const res = await apiFetch(`/api/equipment?page=${page}&limit=${limit}`);
+    const data = await res.json().catch(() => null);
+    if (res.ok && data) {
+      const items: ApiEquipment[] = Array.isArray(data.equipment) ? data.equipment : [];
+      equipment = items.map((e: ApiEquipment) => ({
+        name: e.name || "Untitled",
+        category: e.category || "Uncategorized",
+        price: `$${e.price || 0}`,
+        status: e.status || "pending",
+        owner: e.ownerName || "Unknown",
+        id: e._id || e.id || "",
+      }));
+      totalPages = data.totalPages ?? 1;
+    } else if (data && !res.ok) {
+      console.error("[AllEquipmentPage] /api/equipment failed:", res.status, data);
+    }
+  } catch (error) {
+    console.error("[AllEquipmentPage] /api/equipment fetch error:", error);
+  }
 
   const columns = [
     { key: "name", label: "Equipment" },

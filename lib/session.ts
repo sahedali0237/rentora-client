@@ -34,30 +34,44 @@ export function getSessionActiveRole(user: Pick<
 }
 
 export async function getSession(): Promise<UserSession | null> {
-  // disableCookieCache forces a fresh read from the database rather than
-  // returning the potentially-stale session_data cookie cache. This is
-  // essential after a role switch updates activeRole in MongoDB but the
-  // cookie still carries the previous value — without it, requireRole()
-  // in the /owner and /renter layouts would see a stale activeRole and
-  // bounce the user between dashboards.
-  const session = await auth.api.getSession({
-    headers: await headers(),
-    query: { disableCookieCache: true },
-  });
-  if (session) {
-    // Debug: log authenticated identity (no secrets/tokens).
-    console.log(
-      "[AUTH] Authenticated user:",
-      { id: session.user.id, email: session.user.email },
-    );
-    console.log(
-      "[AUTH] Authenticated roles:",
-      session.user.roles,
-      "activeRole:",
-      session.user.activeRole,
-    );
+  // Wrap the call in try/catch so that a transient Better Auth / MongoDB
+  // failure (cold start, network blip, missing MONGODB_URI env var on Vercel)
+  // does NOT crash the entire Server Component tree. Instead, log and return
+  // null — the caller (requireUser / requireRole) will then redirect to
+  // /sign-in rather than throwing an unhandled error that manifests as
+  // "Minified React error #441" in the browser.
+  try {
+    // disableCookieCache forces a fresh read from the database rather than
+    // returning the potentially-stale session_data cookie cache. This is
+    // essential after a role switch updates activeRole in MongoDB but the
+    // cookie still carries the previous value — without it, requireRole()
+    // in the /owner and /renter layouts would see a stale activeRole and
+    // bounce the user between dashboards.
+    const session = await auth.api.getSession({
+      headers: await headers(),
+      query: { disableCookieCache: true },
+    });
+    if (session) {
+      // Debug: log authenticated identity (no secrets/tokens).
+      console.log(
+        "[AUTH] Authenticated user:",
+        { id: session.user.id, email: session.user.email },
+      );
+      console.log(
+        "[AUTH] Authenticated roles:",
+        session.user.roles,
+        "activeRole:",
+        session.user.activeRole,
+      );
+    }
+    return session;
+  } catch (error) {
+    // Swallow the failure — the page will treat the user as unauthenticated.
+    // This is a safety net for production environments (Vercel) where the
+    // session lookup may fail due to cold starts or missing env vars.
+    console.error("[AUTH] getSession() failed:", error);
+    return null;
   }
-  return session;
 }
 
 /** Requires any signed-in user; redirects to /sign-in otherwise. */

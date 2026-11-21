@@ -24,9 +24,19 @@ export default async function AllRentalsPage() {
 
   const role = getActiveRole(session.user);
 
-  const res = await apiFetch("/api/bookings");
-  const data = await res.json();
-  const rentals: RentalRow[] = (data.bookings || []).map((b: ApiBooking) => ({
+  let bookings: ApiBooking[] = [];
+  try {
+    const res = await apiFetch("/api/bookings");
+    const data = await res.json().catch(() => null);
+    if (res.ok && data) {
+      bookings = Array.isArray(data.bookings) ? data.bookings : [];
+    } else if (data && !res.ok) {
+      console.error("[AllRentalsPage] /api/bookings failed:", res.status, data);
+    }
+  } catch (error) {
+    console.error("[AllRentalsPage] /api/bookings fetch error:", error);
+  }
+  const rentals: RentalRow[] = bookings.map((b: ApiBooking) => ({
     customer: b.renterName || "Unknown",
     owner: b.ownerName || "Unknown",
     equipment: b.equipmentName || b.name || "Untitled",

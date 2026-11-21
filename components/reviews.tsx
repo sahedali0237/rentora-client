@@ -1,7 +1,7 @@
 "use client";
 
 import { Star, User, Edit, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
@@ -295,6 +295,8 @@ export function ReviewList({
   const [reviews, setReviews] = useState<ApiReview[]>(initialReviews);
   const [stats, setStats] = useState<ApiReviewStats>(initialStats);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
   const [rating, setRating] = useState(0);
   const [hoverStar, setHoverStar] = useState(0);
   const [comment, setComment] = useState("");
@@ -319,11 +321,18 @@ export function ReviewList({
       return;
     }
 
+    // Guard: prevent double-submit
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+
     setSubmitting(true);
     try {
       const res = await fetch("/api/reviews", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKeyRef.current,
+        },
         body: JSON.stringify({
           equipmentId,
           rating,
@@ -348,6 +357,10 @@ export function ReviewList({
         const result = await data.json();
         setReviews(result.reviews || []);
         setStats(result.stats || { averageRating: 0, totalReviews: 0 });
+        // Re-enable after the form is reset so a second review attempt is allowed.
+        setSubmitting(false);
+        submittingRef.current = false;
+        idempotencyKeyRef.current = crypto.randomUUID();
       } else {
         let message = "Failed to submit review.";
         try {
@@ -361,11 +374,15 @@ export function ReviewList({
           message = "You have already reviewed this equipment.";
         }
         toast.error(message);
+        // Re-enable on error so the user can retry.
+        setSubmitting(false);
+        submittingRef.current = false;
       }
     } catch {
       toast.error("Network error: could not reach the server.");
-    } finally {
+      // Re-enable on error so the user can retry.
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 

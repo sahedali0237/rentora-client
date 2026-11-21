@@ -4,16 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { ChangeRoleButton } from "@/components/table-actions";
 import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
+import type { ApiUser } from "@/lib/api-types";
 
 export const instant = false;
-
-type UserRow = {
-  name: string;
-  email: string;
-  roles: string[];
-  activeRole: string;
-  createdAt: string;
-};
 
 export default async function AllUsersPage() {
   const session = await getSession();
@@ -21,24 +14,20 @@ export default async function AllUsersPage() {
 
   const role = getActiveRole(session.user);
 
-  const res = await apiFetch("/api/admin/users");
-  const data = await res.json();
-
-  // Surface API errors (401/403/500) instead of silently rendering "No records found."
-  if (!res.ok) {
-    console.error(
-      "[AllUsersPage] /api/admin/users failed:",
-      res.status,
-      res.statusText,
-      data,
-    );
-  }
-  const users: UserRow[] = Array.isArray(data?.users) ? data.users : [];
-  if (!Array.isArray(data?.users)) {
-    console.error(
-      "[AllUsersPage] Expected `users` array in API response:",
-      { status: res.status, ok: res.ok, body: data },
-    );
+  let users: ApiUser[] = [];
+  try {
+    const res = await apiFetch("/api/admin/users");
+    const data = await res.json().catch(() => null);
+    if (res.ok && data) {
+      users = Array.isArray(data.users) ? data.users : [];
+      if (!Array.isArray(data.users)) {
+        console.error("[AllUsersPage] Expected `users` array in API response:", { status: res.status, body: data });
+      }
+    } else if (data && !res.ok) {
+      console.error("[AllUsersPage] /api/admin/users failed:", res.status, res.statusText, data);
+    }
+  } catch (error) {
+    console.error("[AllUsersPage] /api/admin/users fetch error:", error);
   }
 
   const columns = [
@@ -63,7 +52,7 @@ export default async function AllUsersPage() {
 
         <DataTable
           columns={columns}
-          data={users.map((u) => ({
+          data={users.map((u: ApiUser) => ({
             name: u.name,
             email: u.email,
             role: u.activeRole || u.roles?.[0] || "renter",
@@ -81,7 +70,7 @@ export default async function AllUsersPage() {
               );
             }
             if (key === "action") {
-              const u = value as { _id?: string; id?: string; activeRole?: string; roles?: string[] };
+              const u = value as ApiUser;
               const currentRole = u.activeRole || u.roles?.[0] || "renter";
               return <ChangeRoleButton userId={u._id ?? u.id ?? ""} currentRole={currentRole} />;
             }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { ArrowLeft, Calendar, CreditCard, MapPin, Truck, CalendarClock } from "lucide-react";
@@ -24,6 +24,8 @@ export default function RentBookingClient() {
   const [equipment, setEquipment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
 
   const [form, setForm] = useState<BookingForm>({
     startDate: "",
@@ -101,12 +103,19 @@ export default function RentBookingClient() {
       return;
     }
 
+    // Guard: prevent double-submit
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+
     setSubmitting(true);
     try {
       const res = await fetch("/api/bookings", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKeyRef.current,
+        },
         body: JSON.stringify({
           equipmentId,
           startDate: form.startDate,
@@ -118,14 +127,19 @@ export default function RentBookingClient() {
         toast.success("Rental request submitted successfully!");
         router.push("/renter/my-rentals");
         router.refresh();
+        // NOTE: submittingRef stays true — button remains disabled until navigation.
       } else {
         const err = await res.json().catch(() => ({}));
         toast.error(err.error || "Failed to submit rental request.");
+        // Re-enable on error so the user can retry.
+        setSubmitting(false);
+        submittingRef.current = false;
       }
     } catch {
       toast.error("Failed to submit rental request.");
-    } finally {
+      // Re-enable on error so the user can retry.
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 
@@ -319,7 +333,7 @@ export default function RentBookingClient() {
                 disabled={submitting}
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 shadow-sm shadow-green-600/20 transition-colors"
               >
-                {submitting ? "Submitting..." : "Submit Rental Request"}
+                {submitting ? "Booking..." : "Submit Rental Request"}
               </Button>
             </form>
           </div>

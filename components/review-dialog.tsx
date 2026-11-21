@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Star, X, Loader2, ImageOff } from "lucide-react";
@@ -38,6 +38,8 @@ export function ReviewDialog({
   const [hoverStar, setHoverStar] = useState(0);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
 
   // Reset state each time the dialog opens (new booking)
   useEffect(() => {
@@ -46,6 +48,9 @@ export function ReviewDialog({
       setHoverStar(0);
       setComment("");
       setSubmitting(false);
+      submittingRef.current = false;
+      // A fresh dialog = a fresh idempotency key for this booking
+      idempotencyKeyRef.current = crypto.randomUUID();
     }
   }, [isOpen, booking._id]);
 
@@ -73,6 +78,10 @@ export function ReviewDialog({
       return;
     }
 
+    // Guard: prevent double-submit
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+
     setSubmitting(true);
     try {
       // The current /api/reviews POST only reads { equipmentId, rating, comment }
@@ -81,7 +90,10 @@ export function ReviewDialog({
       // not persist it. (See backend field-mismatch notes.)
       const res = await fetch("/api/reviews", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKeyRef.current,
+        },
         body: JSON.stringify({
           equipmentId,
           rating,
@@ -93,6 +105,8 @@ export function ReviewDialog({
         toast.success("Review submitted successfully. Thank you!");
         onSubmitted?.();
         onClose();
+        // NOTE: submittingRef stays true — button remains disabled.
+        // The dialog closes on success so the button is not visible.
       } else {
         // Try to surface a server error message; fall back to a generic one.
         let message = "Failed to submit review.";
@@ -110,11 +124,15 @@ export function ReviewDialog({
           message = "This booking has already been reviewed.";
         }
         toast.error(message);
+        // Re-enable on error so the user can retry.
+        setSubmitting(false);
+        submittingRef.current = false;
       }
     } catch {
       toast.error("Network error: could not reach the server.");
-    } finally {
+      // Re-enable on error so the user can retry.
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 

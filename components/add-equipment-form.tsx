@@ -58,6 +58,8 @@ export function AddEquipmentForm() {
   const router = useRouter();
   const [form, setForm] = useState<EquipmentForm>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
 
   // Image upload states
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -131,6 +133,10 @@ export function AddEquipmentForm() {
   };
 
   const handleSubmit = async (formData: EquipmentForm) => {
+    // Guard: prevent double-submit
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+
     setSubmitting(true);
     try {
       const response = await fetch("/api/equipment", {
@@ -138,6 +144,7 @@ export function AddEquipmentForm() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKeyRef.current,
         },
         body: JSON.stringify(formData),
       });
@@ -158,11 +165,13 @@ export function AddEquipmentForm() {
       toast.success("Equipment listed successfully!");
       router.push("/owner/my-equipment");
       router.refresh();
+      // NOTE: submittingRef stays true — button remains disabled until navigation.
     } catch (error) {
       console.error("Failed to add equipment:", error);
       toast.error(error instanceof Error ? error.message : "Failed to add equipment");
-    } finally {
+      // Re-enable on error so the user can retry.
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 
@@ -558,7 +567,7 @@ export function AddEquipmentForm() {
               disabled={submitting || uploadingImage}
               className="rounded-lg bg-amber-500 px-6 py-2.5 text-sm font-semibold text-gray-900 hover:bg-amber-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-xs"
             >
-              {submitting ? "Listing Equipment..." : "List Equipment for Rent"}
+              {submitting ? "Creating..." : "List Equipment for Rent"}
             </button>
           </div>
         </form>
