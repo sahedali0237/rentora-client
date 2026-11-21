@@ -10,7 +10,11 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   // Real authorization happens here on the server on every request.
-  // Only accounts whose activeRole is "admin" can reach this segment.
+  // requireRole() calls getSession(), which returns null when the user is
+  // simply not signed in — in that case requireUser() redirects to /sign-in.
+  // If getSession() threw (Better Auth / MongoDB failure, e.g. on Vercel),
+  // rethrow so this segment's error.tsx boundary shows the error details
+  // instead of silently bouncing a logged-in admin to /sign-in.
   await requireRole("admin");
   return <>{children}</>;
 }

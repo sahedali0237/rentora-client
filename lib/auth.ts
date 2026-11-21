@@ -29,6 +29,11 @@ export const auth = betterAuth({
         enabled: true,
     },
     advanced: {
+        // On Vercel the request always arrives over https, so secure cookies
+        // must be enabled. useSecureCookies makes Better Auth use the
+        // "__Secure-better-auth.*" cookie names; leave cookiePrefix at its
+        // default ("better-auth") so the production session cookie is
+        // exactly "__Secure-better-auth.session_token".
         useSecureCookies: isProduction || isHttpsBaseURL,
         defaultCookieAttributes: {
             httpOnly: true,

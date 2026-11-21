@@ -3,3 +3,490 @@
 - Network:       http://192.168.0.101:3000
 ✓ Ready in 620ms
 ✓ Running next.config.ts took 150ms
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Protecting route: unknown | required: admin | activeRole: admin | roles: ["renter","owner"]
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Protecting route: unknown | required: admin | activeRole: admin | roles: ["renter","owner"]
+[AUTH] admin/users GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllUsersPage] /api/admin/users fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-users".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-users',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] admin/users GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllEquipmentPage] /api/equipment fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-equipment".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-equipment',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllEquipmentPage] /api/equipment fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-equipment".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-equipment',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllEquipmentPage] /api/equipment fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-equipment".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-equipment',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AUTH] Authenticated user: { id: '6afea63e1078f671ad914f54', email: 'sahedadmin@gmail.com' }
+[AUTH] Authenticated roles: [ 'renter', 'owner' ] activeRole: admin
+[AllRentalsPage] /api/bookings fetch error: Error: During prerendering, fetch() rejects when the prerender is complete. Typically these errors are handled by React but if you move fetch() to a different context by using `setTimeout`, `after`, or similar functions you may observe this error and you should handle it in that context. This occurred at route "/admin/all-rentals".
+    at r (D:\rentora\rentora\.next\server\chunks\2970.js:19:218)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:1:7688)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13901)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:14181)
+    at e.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:22536)
+    at i.with (D:\rentora\rentora\.next\server\chunks\2970.js:11:16806)
+    at i.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:31716)
+    at e.startActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:32249)
+    at z.runWithActiveSpan (D:\rentora\rentora\.next\server\chunks\2970.js:11:14158)
+    at <unknown> (D:\rentora\rentora\.next\server\chunks\2970.js:11:13375) {
+  route: '/admin/all-rentals',
+  expression: 'fetch()',
+  digest: 'HANGING_PROMISE_REJECTION'
+}
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
+[AUTH] bookings GET: {
+  id: '6afea63e1078f671ad914f54',
+  email: 'sahedadmin@gmail.com',
+  activeRole: 'admin',
+  roles: [ 'renter', 'owner' ]
+}
