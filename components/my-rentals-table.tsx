@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { BookingReviewButton } from "@/components/booking-review-button";
-import { PayBookingButton } from "@/components/pay-booking-button";
+import { PayButton } from "@/components/pay-button";
 import { toast } from "react-toastify";
 import type {
   ApiBooking,
@@ -172,11 +172,9 @@ export function MyRentalsTable({
           // "unpaid" when missing so we never show "undefined".
           const payment = String(b.paymentStatus || "unpaid").toLowerCase();
           const variant = payment === "paid" ? "success" : "secondary";
-          const display =
-            payment.charAt(0).toUpperCase() + payment.slice(1);
           return (
             <Badge variant={variant}>
-              <span>{display}</span>
+              <span>{payment}</span>
             </Badge>
           );
         }
@@ -198,11 +196,9 @@ export function MyRentalsTable({
             rejected: "destructive",
           };
           const variant = statusMap[status] || "secondary";
-          const display =
-            status.charAt(0).toUpperCase() + status.slice(1);
           return (
             <Badge variant={variant}>
-              <span>{display}</span>
+              <span>{status}</span>
             </Badge>
           );
         }
@@ -224,7 +220,7 @@ export function MyRentalsTable({
             (b.id ? reviewedIds.has(b.id) : false) ||
             rentalRow.reviewed;
 
-          const showPay = isUnpaid;
+          const showPay = payment === "unpaid" && status !== "cancelled";
           const showReview = isConfirmed;
 
           if (!showPay && !showReview) {
@@ -235,7 +231,7 @@ export function MyRentalsTable({
 
           return (
             <div className="flex items-center gap-2">
-              {showPay && <PayBookingButton booking={b} />}
+              {showPay && <PayButton booking={b} />}
               {showReview && (
                 <BookingReviewButton
                   booking={b}

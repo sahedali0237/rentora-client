@@ -6,24 +6,32 @@ import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import type { ApiBooking } from "@/lib/api-types";
 
-interface PayBookingButtonProps {
+interface PayButtonProps {
   booking: ApiBooking;
 }
 
 /**
  * A row-level "Pay $<total>" action for unpaid, non-cancelled bookings.
  *
- * Calls POST /api/bookings/:id/pay, which responds with `{ url }` pointing
- * to a Stripe Checkout page, and redirects the browser to it. Shows a
- * loading spinner while the request is in flight and a toast on error.
+ * Calls POST /api/bookings/:id/pay with the payable amount, which creates
+ * a Stripe Checkout Session and responds with `{ url }` pointing to the
+ * hosted checkout page. Redirects the browser to that URL. Shows a
+ * loading spinner while the request is in flight and a toast on error,
+ * including the server's error message when available.
  */
-export function PayBookingButton({ booking }: PayBookingButtonProps) {
+export function PayButton({ booking }: PayButtonProps) {
   const [paying, setPaying] = useState(false);
+  const total = Number(booking.amount) || 0;
 
   const handlePay = async () => {
     const id = booking._id || booking.id;
     if (!id) {
       toast.error("Missing booking ID — cannot start payment.");
+      return;
+    }
+
+    if (!total || !Number.isFinite(total)) {
+      toast.error("This booking has no payable amount.");
       return;
     }
 
@@ -35,6 +43,8 @@ export function PayBookingButton({ booking }: PayBookingButtonProps) {
           method: "POST",
           credentials: "include",
           cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: total }),
         },
       );
 
@@ -66,8 +76,6 @@ export function PayBookingButton({ booking }: PayBookingButtonProps) {
       setPaying(false);
     }
   };
-
-  const total = booking.amount ?? 0;
 
   return (
     <Button

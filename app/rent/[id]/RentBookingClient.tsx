@@ -98,17 +98,12 @@ export default function RentBookingClient() {
     try {
       const res = await fetch("/api/bookings", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           equipmentId,
-          equipmentName: equipment?.name || "Equipment",
           startDate: form.startDate,
           endDate: form.endDate,
-          quantity: qty,
-          notes: form.notes,
-          amount: equipment?.rentalPrice
-            ? Number(equipment.rentalPrice) * qty
-            : 0,
         }),
       });
 

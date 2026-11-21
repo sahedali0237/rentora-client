@@ -50,7 +50,7 @@ export default function MyEquipmentRentalPage() {
     setError(null);
     try {
       const url = "/api/owner/bookings";
-      const res = await fetch(url, { cache: "no-store" });
+      const res = await fetch(url, { credentials: "include", cache: "no-store" });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to load rental requests.");
@@ -272,10 +272,10 @@ export default function MyEquipmentRentalPage() {
                   <div className="mt-4 pt-4 border-t border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <Badge variant={statusVariant(booking.status)}>
-                        {String(booking.status).charAt(0).toUpperCase() + String(booking.status).slice(1)}
+                        {booking.status}
                       </Badge>
                       <Badge variant={paymentVariant(booking.paymentStatus)}>
-                        {String(booking.paymentStatus).charAt(0).toUpperCase() + String(booking.paymentStatus).slice(1)}
+                        {booking.paymentStatus}
                       </Badge>
                     </div>
 
@@ -283,16 +283,16 @@ export default function MyEquipmentRentalPage() {
                       {isPaid ? (
                         <>
                           <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
-                            <CheckCircle2 className="h-4 w-4" /> <span>Paid</span>
+                            <CheckCircle2 className="h-4 w-4" /> <span>paid</span>
                           </div>
                           <Badge variant="success" className="text-xs px-2 py-0.5">
-                            Paid
+                            paid
                           </Badge>
                         </>
                       ) : (
                         <>
-                          {booking.status !== "cancelled" &&
-                            booking.status !== "canceled" && (
+                          {booking.paymentStatus === "unpaid" &&
+                            booking.status !== "cancelled" && (
                               <Button
                                 onClick={() =>
                                   setCancelTarget(booking)

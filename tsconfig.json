@@ -30,7 +30,8 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "app/(auth)/sign-up",
-    "app/(auth)/sign-in"
+    "app/(auth)/sign-in",
+    "app/bookings/[id]/checkout_sessions/route.js"
   ],
   "exclude": ["node_modules", "ui-ux-pro-max-skill"]
 }
