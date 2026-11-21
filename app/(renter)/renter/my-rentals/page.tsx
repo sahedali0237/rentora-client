@@ -1,7 +1,6 @@
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { StatCard } from "@/components/stat-card";
 import { MyRentalsTable, type RentalRow } from "@/components/my-rentals-table";
-import { Clock, CheckCircle2, XCircle } from "lucide-react";
+import { RentalStatsBar } from "@/components/rental-stats-bar";
 import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
 import { resolveCanonicalUserId } from "@/lib/users";
@@ -46,30 +45,17 @@ export default async function MyRentalsPage() {
   let allEquipment: ApiEquipment[] = [];
   if (equipmentIds.length > 0) {
     try {
-      const [first] = equipmentIds;
-      const equipRes = await apiFetch(
-        `/api/equipment/${encodeURIComponent(first)}`,
+      const results = await Promise.all(
+        equipmentIds.map(async (eid) => {
+          const res = await apiFetch(
+            `/api/equipment/${encodeURIComponent(eid)}`,
+          );
+          if (!res.ok) return null;
+          const d = await res.json();
+          return d.equipment || d;
+        }),
       );
-      if (equipRes.ok) {
-        const equipData = await equipRes.json();
-        allEquipment = [equipData.equipment || equipData];
-      }
-      const remaining = equipmentIds.slice(1);
-      if (remaining.length > 0) {
-        const results = await Promise.all(
-          remaining.map(async (eid) => {
-            const res = await apiFetch(
-              `/api/equipment/${encodeURIComponent(eid)}`,
-            );
-            if (!res.ok) return null;
-            const d = await res.json();
-            return d.equipment || d;
-          }),
-        );
-        allEquipment.push(
-          ...results.filter((r): r is ApiEquipment => r !== null),
-        );
-      }
+      allEquipment = results.filter((r): r is ApiEquipment => r !== null);
     } catch {
       // Fail silently — the table will render without equipment thumbnails
     }
@@ -158,29 +144,6 @@ export default async function MyRentalsPage() {
     };
   });
 
-  const statusCounts = {
-    pending: 0,
-    confirmed: 0,
-    completed: 0,
-    cancelled: 0,
-    active: 0,
-    other: 0,
-  };
-  for (const r of rows) {
-    const s = r.status.toLowerCase();
-    if (
-      s === "pending" ||
-      s === "confirmed" ||
-      s === "completed" ||
-      s === "cancelled" ||
-      s === "active"
-    ) {
-      statusCounts[s] += 1;
-    } else {
-      statusCounts.other += 1;
-    }
-  }
-
   return (
     <DashboardLayout
       role={role}
@@ -199,29 +162,7 @@ export default async function MyRentalsPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <StatCard
-            title="Pending"
-            value={statusCounts.pending}
-            subtitle="Awaiting payment"
-            icon={Clock}
-            color="amber"
-          />
-          <StatCard
-            title="Confirmed"
-            value={statusCounts.confirmed}
-            subtitle="Active bookings"
-            icon={CheckCircle2}
-            color="emerald"
-          />
-          <StatCard
-            title="Cancelled"
-            value={statusCounts.cancelled}
-            subtitle="No longer active"
-            icon={XCircle}
-            color="rose"
-          />
-        </div>
+        <RentalStatsBar initialRows={rows} />
 
         <MyRentalsTable
           initialRows={rows}

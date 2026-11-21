@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Truck, Headphones, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import type { ApiBooking } from "@/lib/api-types";
 
 const BG = "#F5F6F2";
 const INK = "#12201B";
@@ -35,7 +36,7 @@ function PaymentLoading() {
   );
 }
 
-async function fetchSession(sessionId) {
+async function fetchSession(sessionId: string) {
   const res = await fetch(
     `/api/payment/session/${encodeURIComponent(sessionId)}`,
     {
@@ -48,7 +49,7 @@ async function fetchSession(sessionId) {
   return res.json();
 }
 
-function formatDate(dateStr) {
+function formatDate(dateStr?: string) {
   if (!dateStr) return "—";
   const d = new Date(dateStr);
   return d.toLocaleDateString(undefined, {
@@ -88,7 +89,7 @@ function SuccessFlow() {
 
     let attempt = 0;
     let polling = false;
-    let intervalId = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const poll = async () => {
       if (polling) return;

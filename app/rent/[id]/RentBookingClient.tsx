@@ -82,6 +82,13 @@ export default function RentBookingClient() {
       return;
     }
 
+    // Guard against a stale/invalid route param: the booking is keyed by
+    // this id, so it must be non-empty before we submit.
+    if (!equipmentId) {
+      toast.error("Missing equipment ID — cannot create a booking.");
+      return;
+    }
+
     const qty = parseInt(form.quantity, 10);
     if (!qty || qty < 1) {
       toast.error("Please enter a valid quantity.");

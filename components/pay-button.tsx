@@ -22,7 +22,14 @@ interface PayButtonProps {
  */
 export function PayButton({ booking }: PayButtonProps) {
   const [paying, setPaying] = useState(false);
-  const total = Number(booking.amount) || 0;
+  // Total price with fallbacks: newer records carry totalPrice, older ones
+  // only amount — so the button label matches what the checkout route
+  // charges (which reads `amount` from the server side).
+  const b = booking as ApiBooking & {
+    totalPrice?: number | string;
+    equipment?: { rentalPrice?: number | string; price?: number | string };
+  };
+  const total = Number(b.totalPrice ?? b.amount ?? 0) || 0;
 
   const handlePay = async () => {
     const id = booking._id || booking.id;

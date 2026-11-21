@@ -66,6 +66,8 @@ export type ApiBooking = {
   endDate?: string;
   quantity?: number | string;
   amount?: number | string;
+  /** Total price for newer records (amount kept for backward compatibility). */
+  totalPrice?: number | string;
   notes?: string;
   paymentStatus?: string;
   status?: string;

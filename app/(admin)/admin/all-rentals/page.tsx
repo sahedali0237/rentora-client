@@ -31,7 +31,7 @@ export default async function AllRentalsPage() {
     owner: b.ownerName || "Unknown",
     equipment: b.equipmentName || b.name || "Untitled",
     duration: `${b.startDate || "-"} to ${b.endDate || "-"}`,
-    amount: `$${b.amount || 0}`,
+    amount: `$${Number(b.totalPrice ?? b.amount ?? 0) || 0}`,
     paymentStatus: b.paymentStatus || "unpaid",
     bookingStatus: b.status || "pending",
     id: b._id || b.id || "",

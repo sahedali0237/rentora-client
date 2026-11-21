@@ -125,6 +125,22 @@ export async function POST(request: Request) {
 
   const data = body as Record<string, unknown>;
 
+  // equipmentId is required and must reference a real listing so the
+  // booking can be priced and attributed.
+  const equipmentId =
+    typeof data.equipmentId === "string"
+      ? data.equipmentId.trim()
+      : typeof data.equipmentId === "number"
+        ? String(data.equipmentId)
+        : "";
+
+  if (!equipmentId) {
+    return NextResponse.json(
+      { error: "equipmentId is required" },
+      { status: 400 },
+    );
+  }
+
   const startDate = typeof data.startDate === "string" ? data.startDate : null;
   const endDate = typeof data.endDate === "string" ? data.endDate : null;
 
@@ -140,11 +156,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "End date must be after start date" }, { status: 400 });
   }
 
-  const renterId = await resolveCanonicalUserId(session.user.id);
+  // Price/name/image are always sourced from the equipment document so the
+  // client can never set the amount. Newer records carry totalPrice plus
+  // populated equipmentName/equipmentImage; older ones only carry amount.
+  const equipment = await equipmentCollection().findOne({
+    _id: userIdFilter(equipmentId),
+  } as Record<string, unknown>);
+  if (!equipment) {
+    return NextResponse.json({ error: "Equipment not found" }, { status: 404 });
+  }
+
+  const qty = Math.max(1, Number(data.quantity) || 1);
+  const price = Number(equipment.rentalPrice ?? equipment.price ?? 0);
+  const totalPrice = price > 0 ? price * qty : 0;
 
   const doc = {
     ...data,
-    renterId,
+    equipmentId,
+    equipmentName:
+      typeof equipment.name === "string" ? equipment.name : undefined,
+    equipmentImage:
+      typeof equipment.img === "string"
+        ? equipment.img
+        : typeof equipment.image === "string"
+          ? equipment.image
+          : undefined,
+    quantity: qty,
+    totalPrice,
+    amount: totalPrice,
+    renterId: await resolveCanonicalUserId(session.user.id),
     renterName: session.user.name,
     status: "pending",
     paymentStatus: "unpaid",
