@@ -36,7 +36,29 @@ function PaymentLoading() {
   );
 }
 
-async function fetchSession(sessionId: string) {
+type SessionStatus =
+  | "loading"
+  | "idle"
+  | "confirmed"
+  | "failed"
+  | "timeout"
+  | "error";
+
+type SessionState = {
+  status: SessionStatus;
+  booking: ApiBooking | null;
+  paymentMethod: string | null;
+  attempt: number;
+};
+
+type SessionResponse = {
+  status?: string;
+  payment_status?: string | null;
+  booking?: ApiBooking | null;
+  paymentMethod?: string | null;
+};
+
+async function fetchSession(sessionId: string): Promise<SessionResponse> {
   const res = await fetch(
     `/api/payment/session/${encodeURIComponent(sessionId)}`,
     {
@@ -46,7 +68,7 @@ async function fetchSession(sessionId: string) {
     },
   );
   if (!res.ok) throw new Error("Session lookup failed");
-  return res.json();
+  return res.json() as Promise<SessionResponse>;
 }
 
 function formatDate(dateStr?: string) {
@@ -64,8 +86,8 @@ function SuccessFlow() {
   const router = useRouter();
   const sessionId = searchParams.get("session_id");
 
-  const [state, setState] = useState({
-    status: "loading", // loading | idle | confirmed | failed | timeout | error
+  const [state, setState] = useState<SessionState>({
+    status: "loading",
     booking: null,
     paymentMethod: null,
     attempt: 0,

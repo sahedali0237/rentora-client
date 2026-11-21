@@ -1,18 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-/**
- * Optimistic, cookie-presence-only gate (Next.js 16 uses proxy.ts; the old
- * middleware.ts name is deprecated). It only bounces *signed-out* visitors
- * away from protected areas to avoid a login round-trip for the common case.
- *
- * Real authorization still happens on the server: every dashboard layout
- * calls requireRole(), and route handlers re-validate the session.
- *
- * Note: this intentionally does NOT redirect signed-in users away from
- * /sign-in or /sign-up. A stale session cookie would cause an infinite
- * proxy <-> requireUser redirect loop; that check lives in the (auth)
- * layout with a real session lookup instead.
- */
+
 
 const PROTECTED_PREFIXES = ["/renter", "/owner", "/admin", "/dashboard"];
 
