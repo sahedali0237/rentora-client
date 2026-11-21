@@ -5,8 +5,8 @@ import { stripe } from "../../lib/stripe";
 // This page depends on per-request Stripe session data (`session_id`).
 // The Stripe SDK internally calls `Date.now()` for request timing, which is
 // an unstable value that must not execute during static prerendering.
-// Force dynamic rendering so this route always renders at request time.
-export const dynamic = "force-dynamic";
+// Block prerendering so this route always renders at request time.
+export const instant = false;
 
 export default async function Success({
   searchParams,

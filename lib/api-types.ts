@@ -69,6 +69,7 @@ export type ApiBooking = {
   notes?: string;
   paymentStatus?: string;
   status?: string;
+  stripeSessionId?: string;
   createdAt?: string;
 };
 

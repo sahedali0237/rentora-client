@@ -13,11 +13,12 @@ interface PayButtonProps {
 /**
  * A row-level "Pay $<total>" action for unpaid, non-cancelled bookings.
  *
- * Calls POST /api/bookings/:id/pay with the payable amount, which creates
- * a Stripe Checkout Session and responds with `{ url }` pointing to the
- * hosted checkout page. Redirects the browser to that URL. Shows a
- * loading spinner while the request is in flight and a toast on error,
- * including the server's error message when available.
+ * Calls POST /api/bookings/:id/checkout, which creates a Stripe Checkout
+ * Session (server-side amount, so the client can't alter the price) and
+ * responds with `{ url }` pointing to the hosted checkout page. Redirects
+ * the browser to that URL. Shows a loading spinner while the request is in
+ * flight and a toast on error, including the server's error message when
+ * available.
  */
 export function PayButton({ booking }: PayButtonProps) {
   const [paying, setPaying] = useState(false);
@@ -38,13 +39,12 @@ export function PayButton({ booking }: PayButtonProps) {
     setPaying(true);
     try {
       const res = await fetch(
-        `/api/bookings/${encodeURIComponent(id)}/pay`,
+        `/api/bookings/${encodeURIComponent(id)}/checkout`,
         {
           method: "POST",
           credentials: "include",
           cache: "no-store",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: total }),
         },
       );
 

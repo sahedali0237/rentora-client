@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/auth";
+import { getActiveRole } from "@/lib/roles";
+import { userIdFilter, resolveCanonicalUserId, userRefFilter } from "@/lib/users";
+
+const bookingsCollection = () => db.collection("bookings");
+const equipmentCollection = () => db.collection("equipment");
 
 /**
- * Proxy PATCH /bookings/:id/cancel to the Express backend.
- * Authenticates via session and forwards Authorization: Bearer <email>
- * so the backend owns cancellation logic and authorization.
- * Next.js 15: `params` is a Promise.
+ * PATCH /api/bookings/:id/cancel
+ * Cancels a booking. Owners must not be able to cancel a booking once its
+ * paymentStatus is 'Paid'. Next.js 15: `params` is a Promise.
  */
 export async function PATCH(
   request: Request,
@@ -14,44 +19,60 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || !session.user.email) {
+  if (!session) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL;
-  if (!base) {
+  const activeRole = getActiveRole(session.user);
+  const userId = await resolveCanonicalUserId(session.user.id);
+
+  const booking = await bookingsCollection().findOne(
+    { _id: userIdFilter(id) } as Record<string, unknown>,
+  );
+  if (!booking) {
+    return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+  }
+
+  // Guard: owners cannot cancel a booking that has already been paid.
+  if (
+    activeRole === "owner" &&
+    String(booking.paymentStatus || "").toLowerCase() === "paid"
+  ) {
     return NextResponse.json(
-      { error: "Backend is not configured." },
-      { status: 500 },
+      { error: "Cannot cancel a booking that has already been paid for." },
+      { status: 403 },
     );
   }
 
-  const backendUrl = new URL(
-    `/bookings/${encodeURIComponent(id)}/cancel`,
-    base,
+  let authorized = false;
+
+  if (activeRole === "owner") {
+    const equipment = await equipmentCollection().findOne({
+      _id: userIdFilter(String(booking.equipmentId)),
+      ownerId: userRefFilter(userId),
+    } as Record<string, unknown>);
+    authorized = !!equipment;
+  } else if (activeRole === "renter") {
+    authorized = booking.renterId === userId || booking.renterId === session.user.id;
+  } else if (activeRole === "admin") {
+    authorized = true;
+  }
+
+  if (!authorized) {
+    return NextResponse.json(
+      { error: "Not authorized to cancel this booking" },
+      { status: 403 },
+    );
+  }
+
+  const result = await bookingsCollection().updateOne(
+    { _id: userIdFilter(id) } as Record<string, unknown>,
+    { $set: { status: "cancelled", updatedAt: new Date() } },
   );
 
-  // Forward the body if present (some callers send no body).
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    body = undefined;
+  if (result.matchedCount === 0) {
+    return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }
 
-  const init: RequestInit = {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${session.user.email}`,
-    },
-  };
-  if (body !== undefined) {
-    (init.headers as Record<string, string>)["Content-Type"] =
-      "application/json";
-    (init as RequestInit & { body?: string }).body = JSON.stringify(body);
-  }
-
-  const res = await fetch(backendUrl.toString(), init);
-  const data = await res.json().catch(() => ({}));
-  return NextResponse.json(data, { status: res.status });
+  return NextResponse.json({ success: true });
 }
