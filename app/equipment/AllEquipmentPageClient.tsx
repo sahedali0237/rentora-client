@@ -6,7 +6,6 @@ import { EquipmentCard, EquipmentCardProps } from "@/components/equipment-card";
 import { ApiEquipment } from "@/lib/api-types";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import { toast } from "react-toastify";
 import { authClient } from "@/lib/auth-client";
 
 interface FilterState {
@@ -62,6 +61,7 @@ export default function AllEquipmentPageClient() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   // Initialize from URL search params
   useEffect(() => {
@@ -81,6 +81,7 @@ export default function AllEquipmentPageClient() {
 
   const fetchEquipment = useCallback(async () => {
     setLoading(true);
+    setFailed(false);
     try {
       const params = new URLSearchParams();
       if (filters.search) params.set("search", filters.search);
@@ -97,23 +98,39 @@ export default function AllEquipmentPageClient() {
       params.set("page", filters.page);
       params.set("limit", "6");
 
-      const res = await fetch(`/api/equipment?${params.toString()}`, {
-        cache: "no-store",
-      });
+      const url = `/api/equipment?${params.toString()}`;
 
-      if (res.ok) {
-        const data = await res.json();
-        const list: ApiEquipment[] = Array.isArray(data)
-          ? data
-          : (data.equipment ?? []);
-        setEquipment(list);
-        setTotal(data.total ?? list.length);
-        setTotalPages(data.totalPages ?? 1);
-      } else {
-        toast.error("Failed to load equipment.");
+      // Retry up to 2 times with short backoff on non-ok or network errors.
+      let res: Response | null = null;
+      for (let attempt = 0; attempt <= 2; attempt++) {
+        try {
+          const r = await fetch(url, { cache: "no-store" });
+          if (r.ok) {
+            res = r;
+            break;
+          }
+        } catch {
+          /* network error – treat as retryable */
+        }
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        }
       }
+
+      if (!res) {
+        setFailed(true);
+        return;
+      }
+
+      const data = await res.json();
+      const list: ApiEquipment[] = Array.isArray(data)
+        ? data
+        : (data.equipment ?? []);
+      setEquipment(list);
+      setTotal(data.total ?? list.length);
+      setTotalPages(data.totalPages ?? 1);
     } catch {
-      toast.error("Failed to load equipment.");
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -220,6 +237,15 @@ export default function AllEquipmentPageClient() {
           <div className="col-span-full flex flex-col items-center justify-center py-12">
             <div className="h-8 w-48 bg-gray-200 dark:bg-zinc-800 rounded animate-pulse mb-4" />
             <div className="h-8 w-32 bg-gray-200 dark:bg-zinc-800 rounded animate-pulse" />
+          </div>
+        ) : failed ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-gray-500 dark:text-zinc-500">
+              Couldn't load equipment. Please refresh the page to try again.
+            </p>
+            <Button variant="outline" onClick={fetchEquipment} size="sm" className="mt-4">
+              Retry
+            </Button>
           </div>
         ) : equipment.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">

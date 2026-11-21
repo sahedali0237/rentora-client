@@ -18,25 +18,47 @@ import { ApiEquipment } from "@/lib/api-types";
  * auth-aware `apiFetch` at build time). The public endpoint returns only
  * approved listings, which is exactly what we showcase.
  */
+async function fetchWithRetry(
+  url: string,
+  retries = 2,
+  backoffMs = 1000,
+): Promise<Response | null> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (res.ok) return res;
+      // Non-ok response: treat as a retryable failure.
+    } catch {
+      // Network error: treat as a retryable failure.
+    }
+    if (attempt < retries) {
+      await new Promise((r) => setTimeout(r, backoffMs * (attempt + 1)));
+    }
+  }
+  return null;
+}
+
 export default function EquipmentCarousel() {
   const [items, setItems] = useState<ApiEquipment[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch("/api/equipment?limit=10", {
-          cache: "no-store",
-        });
-        if (!res.ok) return;
+        const res = await fetchWithRetry("/api/equipment?limit=10");
+        if (!res) {
+          if (!cancelled) setFailed(true);
+          return;
+        }
         const data = await res.json();
         const list: ApiEquipment[] = Array.isArray(data)
           ? data
           : (data.equipment ?? []);
         if (!cancelled) setItems(list);
       } catch {
-        // Never let a DB/API hiccup break the homepage.
+        if (!cancelled) setFailed(true);
       } finally {
         if (!cancelled) setLoaded(true);
       }
@@ -48,7 +70,36 @@ export default function EquipmentCarousel() {
   }, []);
 
   const hasItems = items.length > 0;
-  const showEmpty = loaded && !hasItems;
+  const showEmpty = loaded && !failed && !hasItems;
+
+  if (failed) {
+    return (
+      <section className="bg-[#101820] py-12">
+        <div className="mx-auto flex max-w-7xl flex-col items-start gap-4 px-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+          <div>
+            <div className="mb-3 flex items-center gap-3">
+              <span className="h-px w-10 bg-[#FFC21A]" />
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#FFC21A]">
+                Browse the fleet
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              Couldn't load equipment
+            </h2>
+            <p className="mt-2 text-sm text-[#C9D1D9]">
+              Something went wrong. Please refresh the page to try again.
+            </p>
+          </div>
+          <Link
+            href="/list-equipment"
+            className="inline-flex shrink-0 items-center rounded-xl bg-[#FFC21A] px-6 py-3 text-sm font-bold text-[#101820] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#ffd04d] hover:shadow-[0_12px_35px_rgba(255,194,26,0.25)]"
+          >
+            List Your Equipment
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
   if (showEmpty) {
     return (

@@ -13,6 +13,22 @@ import { refreshEquipmentReviewStats } from "@/lib/review-stats";
 
 const reviewsCollection = () => db.collection("reviews");
 
+/**
+ * Retry an async MongoDB operation up to `tries` times.
+ * Delays grow linearly: 400ms * attempt before each retry.
+ */
+async function withRetry<T>(fn: () => Promise<T>, tries = 3): Promise<T> {
+  for (let attempt = 0; attempt < tries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (attempt === tries - 1) throw err;
+      await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+    }
+  }
+  throw new Error("withRetry: unreachable");
+}
+
 const EMPTY_STATS = {
   averageRating: 0,
   totalReviews: 0,
@@ -57,59 +73,66 @@ function computeStats(reviews: Array<Record<string, unknown>>) {
  * query params are provided. Publicly readable - no auth required.
  */
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const equipmentId = searchParams.get("equipmentId");
-  const userId = searchParams.get("userId");
-  const email = searchParams.get("email");
+  try {
+    const { searchParams } = new URL(request.url);
+    const equipmentId = searchParams.get("equipmentId");
+    const userId = searchParams.get("userId");
+    const email = searchParams.get("email");
 
-  const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = {};
 
-  if (equipmentId) {
-    filter.equipmentId = equipmentId;
-  }
-
-  // Identity-based filters (`userId` takes precedence over `email`). Reviews
-  // store `renterId` (the user's canonical Mongo `_id`), so an email filter
-  // is resolved to a user document first.
-  if (userId) {
-    filter.renterId = userRefFilter(userId);
-  } else if (email) {
-    const user = await usersCollection().findOne({ email } as any);
-    if (!user) {
-      return NextResponse.json({ reviews: [], stats: EMPTY_STATS });
+    if (equipmentId) {
+      filter.equipmentId = equipmentId;
     }
-    const canonicalId = user._id?.toString();
-    if (!canonicalId) {
-      return NextResponse.json({ reviews: [], stats: EMPTY_STATS });
+
+    // Identity-based filters (`userId` takes precedence over `email`). Reviews
+    // store `renterId` (the user's canonical Mongo `_id`), so an email filter
+    // is resolved to a user document first.
+    if (userId) {
+      filter.renterId = userRefFilter(userId);
+    } else if (email) {
+      const user = await usersCollection().findOne({ email } as any);
+      if (!user) {
+        return NextResponse.json({ reviews: [], stats: EMPTY_STATS });
+      }
+      const canonicalId = user._id?.toString();
+      if (!canonicalId) {
+        return NextResponse.json({ reviews: [], stats: EMPTY_STATS });
+      }
+      filter.renterId = userRefFilter(canonicalId);
     }
-    filter.renterId = userRefFilter(canonicalId);
+
+    const reviews = await withRetry(() =>
+      reviewsCollection()
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .toArray(),
+    );
+
+    const { averageRating, totalReviews, ratingBreakdown } = computeStats(reviews);
+
+    return NextResponse.json({
+      reviews: reviews.map((r) => ({
+        id: r._id?.toString(),
+        equipmentId: r.equipmentId,
+        renterId: r.renterId?.toString?.() ?? r.renterId,
+        renterName: r.renterName,
+        renterImage: r.renterImage,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+      })),
+      stats: {
+        averageRating,
+        totalReviews,
+        ratingBreakdown,
+      },
+    });
+  } catch (err) {
+    console.error("GET /api/reviews failed:", err);
+    return NextResponse.json({ error: "Failed to load reviews" }, { status: 503 });
   }
-
-  const reviews = await reviewsCollection()
-    .find(filter)
-    .sort({ createdAt: -1 })
-    .toArray();
-
-  const { averageRating, totalReviews, ratingBreakdown } = computeStats(reviews);
-
-  return NextResponse.json({
-    reviews: reviews.map((r) => ({
-      id: r._id?.toString(),
-      equipmentId: r.equipmentId,
-      renterId: r.renterId?.toString?.() ?? r.renterId,
-      renterName: r.renterName,
-      renterImage: r.renterImage,
-      rating: r.rating,
-      comment: r.comment,
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt,
-    })),
-    stats: {
-      averageRating,
-      totalReviews,
-      ratingBreakdown,
-    },
-  });
 }
 
 /**

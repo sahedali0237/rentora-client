@@ -2,7 +2,15 @@ import { betterAuth } from "better-auth";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
-const client = new MongoClient(process.env.MONGODB_URI as string);
+const globalForMongo = globalThis as unknown as { _mongoClient?: MongoClient };
+const client =
+  globalForMongo._mongoClient ??
+  new MongoClient(process.env.MONGODB_URI as string, {
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
+globalForMongo._mongoClient = client;
 const db = client.db("Rentora-site");
 
 // Reused by API routes that update user documents directly (role switching).

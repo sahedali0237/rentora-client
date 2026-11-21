@@ -46,15 +46,38 @@ export default function ReviewsPage() {
   }>({ averageRating: 0, totalReviews: 0, ratingBreakdown: {} });
   const [filter, setFilter] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/reviews")
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to load reviews");
-        return res.json();
-      })
-      .then((data) => {
+    (async () => {
+      // Retry up to 2 times with short backoff on non-ok or network errors.
+      let res: Response | null = null;
+      for (let attempt = 0; attempt <= 2; attempt++) {
+        try {
+          const r = await fetch("/api/reviews", { cache: "no-store" });
+          if (r.ok) {
+            res = r;
+            break;
+          }
+        } catch {
+          /* network error – treat as retryable */
+        }
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        }
+      }
+
+      if (cancelled) return;
+
+      if (!res) {
+        setFailed(true);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const data = await res.json();
         if (cancelled) return;
         setReviews(data.reviews || []);
         setStats(
@@ -64,15 +87,12 @@ export default function ReviewsPage() {
             ratingBreakdown: {},
           },
         );
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setReviews([]);
-        setStats({ averageRating: 0, totalReviews: 0, ratingBreakdown: {} });
-      })
-      .finally(() => {
+      } catch {
+        if (!cancelled) setFailed(true);
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -136,7 +156,17 @@ export default function ReviewsPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredReviews.length === 0 && !loading ? (
+        {failed ? (
+          <div className="col-span-3 flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-dashed border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+            <Star
+              className="h-12 w-12 text-gray-400 dark:text-zinc-500 mb-3"
+              aria-hidden
+            />
+            <p className="text-sm text-gray-500 dark:text-zinc-500">
+              Couldn't load reviews. Please refresh the page to try again.
+            </p>
+          </div>
+        ) : filteredReviews.length === 0 && !loading ? (
           <div className="col-span-3 flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-dashed border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
             <Star
               className="h-12 w-12 text-gray-400 dark:text-zinc-500 mb-3"

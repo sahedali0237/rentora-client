@@ -14,23 +14,47 @@ import type { ApiReview } from "@/lib/api-types";
  * (see globals.css) and the same seamless double-copy + pause-on-hover +
  * reduced-motion behaviour. Reviews are fetched client-side.
  */
+async function fetchWithRetry(
+  url: string,
+  retries = 2,
+  backoffMs = 1000,
+): Promise<Response | null> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (res.ok) return res;
+      // Non-ok response: treat as a retryable failure.
+    } catch {
+      // Network error: treat as a retryable failure.
+    }
+    if (attempt < retries) {
+      await new Promise((r) => setTimeout(r, backoffMs * (attempt + 1)));
+    }
+  }
+  return null;
+}
+
 export default function ReviewMarquee() {
   const [reviews, setReviews] = useState<ApiReview[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch("/api/reviews", { cache: "no-store" });
-        if (!res.ok) return;
+        const res = await fetchWithRetry("/api/reviews");
+        if (!res) {
+          if (!cancelled) setFailed(true);
+          return;
+        }
         const data = await res.json();
         const list: ApiReview[] = Array.isArray(data)
           ? data
           : (data.reviews ?? []);
         if (!cancelled) setReviews(list);
       } catch {
-        // A DB/API hiccup should never break the homepage.
+        if (!cancelled) setFailed(true);
       } finally {
         if (!cancelled) setLoaded(true);
       }
@@ -42,7 +66,30 @@ export default function ReviewMarquee() {
   }, []);
 
   const hasItems = reviews.length > 0;
-  const showEmpty = loaded && !hasItems;
+  const showEmpty = loaded && !failed && !hasItems;
+
+  if (failed) {
+    return (
+      <section className="bg-[#f5f1ea] py-12 lg:py-14">
+        <div className="mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              What customers say
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Couldn't load reviews. Please refresh the page to try again.
+            </p>
+          </div>
+          <Link
+            href="/equipment"
+            className="inline-flex shrink-0 items-center rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-gray-800"
+          >
+            Browse equipment
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
   if (showEmpty) {
     return (

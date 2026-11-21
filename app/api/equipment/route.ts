@@ -8,89 +8,126 @@ import { userIdFilter, resolveCanonicalUserId, userRefFilter } from "@/lib/users
 
 const equipmentCollection = () => db.collection("equipment");
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
-  const limit = Math.min(
-    Math.max(parseInt(searchParams.get("limit") || "6", 10), 1),
-    100,
-  );
-  const skip = (page - 1) * limit;
-
-  const mine = searchParams.get("mine");
-  const email = searchParams.get("email");
-
-  const session = await auth.api.getSession({ headers: await headers() });
-  const isAdmin = session?.user ? getActiveRole(session.user) === "admin" : false;
-
-  const filter: Record<string, unknown> = {};
-
-  if (mine === "true") {
-    if (!session) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+/**
+ * Retry an async MongoDB operation up to `tries` times.
+ * Delays grow linearly: 400ms * attempt before each retry.
+ */
+async function withRetry<T>(fn: () => Promise<T>, tries = 3): Promise<T> {
+  for (let attempt = 0; attempt < tries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (attempt === tries - 1) throw err;
+      await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
     }
-    filter.ownerId = userRefFilter(await resolveCanonicalUserId(session.user.id));
-  } else if (email) {
-    // Allow filtering by owner email (for My Equipment page)
-    filter.ownerEmail = email;
-  } else if (!isAdmin) {
-    // Public / non-admin viewers only see approved listings.
-    filter.status = { $regex: /^approved$/i };
   }
-  // Admins viewing All Equipment see every listing (pending, approved, rejected)
-  // so they can moderate them.
+  throw new Error("withRetry: unreachable");
+}
 
-  const category = searchParams.get("category");
-  if (category) {
-    filter.category = category;
+/** Escape regex special characters so user-supplied strings are safe for $regex. */
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
+    const limit = Math.min(
+      Math.max(parseInt(searchParams.get("limit") || "6", 10), 1),
+      100,
+    );
+    const skip = (page - 1) * limit;
+
+    const mine = searchParams.get("mine");
+    const email = searchParams.get("email");
+
+    let session: Awaited<ReturnType<typeof auth.api.getSession>> = null;
+    try {
+      session = await auth.api.getSession({ headers: await headers() });
+    } catch {
+      // If session lookup fails (e.g. transient DB hiccup), treat as public user.
+      session = null;
+    }
+    const isAdmin = session?.user ? getActiveRole(session.user) === "admin" : false;
+
+    const filter: Record<string, unknown> = {};
+
+    if (mine === "true") {
+      if (!session) {
+        return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+      }
+      filter.ownerId = userRefFilter(await resolveCanonicalUserId(session.user.id));
+    } else if (email) {
+      // Allow filtering by owner email (for My Equipment page)
+      filter.ownerEmail = email;
+    } else if (!isAdmin) {
+      // Public / non-admin viewers only see approved listings.
+      filter.status = { $regex: /^approved$/i };
+    }
+    // Admins viewing All Equipment see every listing (pending, approved, rejected)
+    // so they can moderate them.
+
+    const category = searchParams.get("category");
+    if (category) {
+      filter.category = category;
+    }
+
+    const location = searchParams.get("location");
+    if (location) {
+      filter.location = { $regex: escapeRegex(location), $options: "i" };
+    }
+
+    const minPrice = searchParams.get("minPrice");
+    const maxPrice = searchParams.get("maxPrice");
+    if (minPrice || maxPrice) {
+      const priceFilter: Record<string, unknown> = {};
+      if (minPrice) priceFilter.$gte = Number(minPrice);
+      if (maxPrice) priceFilter.$lte = Number(maxPrice);
+      filter.rentalPrice = priceFilter;
+    }
+
+    const rentalType = searchParams.get("rentalType");
+    if (rentalType) {
+      filter.rentalType = rentalType;
+    }
+
+    const search = searchParams.get("search");
+    if (search) {
+      const escapedSearch = escapeRegex(search);
+      filter.$or = [
+        { name: { $regex: escapedSearch, $options: "i" } },
+        { description: { $regex: escapedSearch, $options: "i" } },
+      ];
+    }
+
+    const sortField = searchParams.get("sort") ?? "createdAt";
+    const sortOrder = searchParams.get("order") === "asc" ? 1 : -1;
+
+    const equipment = await withRetry(() =>
+      equipmentCollection()
+        .find(filter)
+        .sort({ [sortField]: sortOrder, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray(),
+    );
+
+    const total = await withRetry(() =>
+      equipmentCollection().countDocuments(filter),
+    );
+
+    return NextResponse.json({
+      equipment,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (err) {
+    console.error("GET /api/equipment failed:", err);
+    return NextResponse.json({ error: "Failed to load equipment" }, { status: 503 });
   }
-
-  const location = searchParams.get("location");
-  if (location) {
-    filter.location = { $regex: location, $options: "i" };
-  }
-
-  const minPrice = searchParams.get("minPrice");
-  const maxPrice = searchParams.get("maxPrice");
-  if (minPrice || maxPrice) {
-    const priceFilter: Record<string, unknown> = {};
-    if (minPrice) priceFilter.$gte = Number(minPrice);
-    if (maxPrice) priceFilter.$lte = Number(maxPrice);
-    filter.rentalPrice = priceFilter;
-  }
-
-  const rentalType = searchParams.get("rentalType");
-  if (rentalType) {
-    filter.rentalType = rentalType;
-  }
-
-  const search = searchParams.get("search");
-  if (search) {
-    filter.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { description: { $regex: search, $options: "i" } },
-    ];
-  }
-
-  const sortField = searchParams.get("sort") ?? "createdAt";
-  const sortOrder = searchParams.get("order") === "asc" ? 1 : -1;
-
-  const equipment = await equipmentCollection()
-    .find(filter)
-    .sort({ [sortField]: sortOrder, createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .toArray();
-
-  const total = await equipmentCollection().countDocuments(filter);
-
-  return NextResponse.json({
-    equipment,
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
-  });
 }
 
 export async function POST(request: Request) {
