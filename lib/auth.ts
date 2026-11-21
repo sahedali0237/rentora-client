@@ -8,12 +8,25 @@ const db = client.db("Rentora-site");
 // Reused by API routes that update user documents directly (role switching).
 export { db };
 
+const baseURL = process.env.BETTER_AUTH_URL;
+const isProduction = process.env.NODE_ENV === "production";
+const isHttpsBaseURL = baseURL?.startsWith("https://");
+
 export const auth = betterAuth({
+    baseURL,
     database: mongodbAdapter(db, {
         client,
     }),
     emailAndPassword: {
         enabled: true,
+    },
+    advanced: {
+        useSecureCookies: isProduction || isHttpsBaseURL,
+        defaultCookieAttributes: {
+            httpOnly: true,
+            secure: isProduction || isHttpsBaseURL,
+            sameSite: "lax",
+        },
     },
     socialProviders: {
         google: {
