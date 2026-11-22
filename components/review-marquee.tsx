@@ -70,7 +70,7 @@ export default function ReviewMarquee() {
 
   if (failed) {
     return (
-      <section className="bg-[#f5f1ea] py-12 lg:py-14">
+      <section className="bg-[#f5f1ea] py-12 lg:py-14 overflow-hidden">
         <div className="mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
@@ -100,7 +100,8 @@ export default function ReviewMarquee() {
               What customers say
             </h2>
             <p className="mt-2 text-sm text-gray-600">
-              No reviews yet — be the first to share your experience after your next rental.
+              No reviews yet — be the first to share your experience after your
+              next rental.
             </p>
           </div>
           <Link
@@ -176,7 +177,9 @@ function ReviewCard({ review }: { review: ApiReview }) {
           <Star
             key={star}
             className={`h-4 w-4 ${
-              star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+              star <= rating
+                ? "fill-yellow-400 text-yellow-400"
+                : "text-gray-300"
             }`}
             aria-hidden
           />
