@@ -12,18 +12,22 @@ import {
 } from "lucide-react";
 import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
-import type { ApiBooking, ApiEquipment, ApiUser } from "@/lib/api-types";
+import type { ApiBooking } from "@/lib/api-types";
 import { EarningsChart } from "@/components/earnings-chart";
 
 // Cache Components: the signed-in check uses headers()/sessions, so this
 // segment must be a blocking route.
 export const instant = false;
 
+/**
+ * Headline statistics for the four admin stat cards, sourced from a single
+ * aggregated backend endpoint: GET /api/admin/stats.
+ *
+ * The response is parsed defensively: a failed request or missing/null fields
+ * fall back to zero so the dashboard never crashes, and the existing Suspense
+ * skeleton handles the loading state.
+ */
 async function getStats() {
-  // Only parse JSON when the API responded successfully. Error responses are
-  // always JSON from our API routes, but guarding here prevents a client-side
-  // JSON parse error (and a crashed dashboard) if a route ever returns a
-  // non-JSON error page while failing/unauthenticated.
   async function readJson(res: Response) {
     if (!res.ok) return {};
     try {
@@ -33,27 +37,18 @@ async function getStats() {
     }
   }
 
-  const usersRes = await apiFetch("/api/admin/users");
-  const usersData = await readJson(usersRes);
+  const statsRes = await apiFetch("/api/admin/stats");
+  const statsData = await readJson(statsRes);
 
-  const equipRes = await apiFetch("/api/equipment");
-  const equipData = await readJson(equipRes);
+  const totalUsers = Number(statsData.totalUsers) || 0;
+  const totalEquipment = Number(statsData.totalEquipment) || 0;
+  const pendingApprovals = Number(statsData.pendingApprovals) || 0;
+  const totalRevenue = Number(statsData.totalRevenue) || 0;
 
+  // Monthly booking statistics for the earnings chart (unchanged source).
   const bookRes = await apiFetch("/api/bookings");
   const bookData = await readJson(bookRes);
-
-  const users: ApiUser[] = (usersData as { users?: ApiUser[] }).users || [];
-  const equipment: ApiEquipment[] = (equipData as { equipment?: ApiEquipment[] }).equipment || [];
   const bookings: ApiBooking[] = (bookData as { bookings?: ApiBooking[] }).bookings || [];
-
-  const totalUsers = users.length;
-  const totalEquipment = equipment.length;
-  const totalBookings = bookings.length;
-  const pendingApprovals = equipment.filter((e) => e.status === "pending").length;
-  const completedRentals = bookings.filter((b) => b.status === "completed").length;
-  const totalRevenue = bookings
-    .filter((b) => b.paymentStatus === "paid")
-    .reduce((sum: number, b) => sum + (Number(b.amount) || 0), 0);
 
   const now = new Date();
   const monthly = Array.from({ length: 6 }, (_, i) => {
@@ -68,9 +63,7 @@ async function getStats() {
   return {
     totalUsers,
     totalEquipment,
-    totalBookings,
     pendingApprovals,
-    completedRentals,
     totalRevenue,
     monthly,
   };
@@ -118,7 +111,6 @@ async function AdminDashboard() {
             subtitle="Registered accounts"
             icon={UsersRound}
             color="blue"
-            trend={{ value: "+12% this month", positive: true }}
           />
           <StatCard
             title="Total Equipment"
@@ -126,7 +118,6 @@ async function AdminDashboard() {
             subtitle="Listed on platform"
             icon={List}
             color="emerald"
-            trend={{ value: "+8% this month", positive: true }}
           />
           <StatCard
             title="Pending Approvals"
@@ -134,7 +125,6 @@ async function AdminDashboard() {
             subtitle="Equipment awaiting review"
             icon={Clock}
             color="amber"
-            trend={{ value: "-5% since last week", positive: true }}
           />
           <StatCard
             title="Total Revenue"
@@ -142,7 +132,6 @@ async function AdminDashboard() {
             subtitle="From completed rentals"
             icon={DollarSign}
             color="rose"
-            trend={{ value: "+18% this month", positive: true }}
           />
         </div>
 

@@ -2,27 +2,51 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { ChangeRoleButton } from "@/components/table-actions";
+import { Pagination } from "@/components/pagination";
 import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
 import type { ApiUser } from "@/lib/api-types";
+import type { Metadata } from "next";
 
 export const instant = false;
+export const metadata: Metadata = { title: "All Users" };
 
-export default async function AllUsersPage() {
+type UserRow = {
+  name: string;
+  email: string;
+  role: string;
+  registered: string;
+  id: string;
+};
+
+type AllUsersPageProps = {
+  searchParams: Promise<{ page?: string }>;
+};
+
+export default async function AllUsersPage({ searchParams }: AllUsersPageProps) {
   const session = await getSession();
   if (!session) return null;
 
   const role = getActiveRole(session.user);
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(parseInt(pageParam || "1", 10), 1);
+  const limit = 6;
 
-  let users: ApiUser[] = [];
+  let users: UserRow[] = [];
+  let totalPages = 1;
   try {
-    const res = await apiFetch("/api/admin/users");
+    const res = await apiFetch(`/api/admin/users?page=${page}&limit=${limit}`);
     const data = await res.json().catch(() => null);
     if (res.ok && data) {
-      users = Array.isArray(data.users) ? data.users : [];
-      if (!Array.isArray(data.users)) {
-        console.error("[AllUsersPage] Expected `users` array in API response:", { status: res.status, body: data });
-      }
+      const items: ApiUser[] = Array.isArray(data.users) ? data.users : [];
+      users = items.map((u: ApiUser) => ({
+        name: u.name || "Unknown",
+        email: u.email || "-",
+        role: u.activeRole || u.roles?.[0] || "renter",
+        registered: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-",
+        id: u._id || u.id || "",
+      }));
+      totalPages = data.totalPages ?? 1;
     } else if (data && !res.ok) {
       console.error("[AllUsersPage] /api/admin/users failed:", res.status, res.statusText, data);
     }
@@ -52,13 +76,7 @@ export default async function AllUsersPage() {
 
         <DataTable
           columns={columns}
-          data={users.map((u: ApiUser) => ({
-            name: u.name,
-            email: u.email,
-            role: u.activeRole || u.roles?.[0] || "renter",
-            registered: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-",
-            action: u,
-          }))}
+          data={users}
           cellRenderer={(key, value, row) => {
             if (key === "role") {
               const roleValue = value as string;
@@ -70,13 +88,17 @@ export default async function AllUsersPage() {
               );
             }
             if (key === "action") {
-              const u = value as ApiUser;
-              const currentRole = u.activeRole || u.roles?.[0] || "renter";
-              return <ChangeRoleButton userId={u._id ?? u.id ?? ""} currentRole={currentRole} />;
+              const u = row as unknown as UserRow;
+              const currentRole = u.role;
+              return <ChangeRoleButton userId={u.id} currentRole={currentRole} />;
             }
             return value as React.ReactNode;
           }}
         />
+
+        {totalPages > 1 && (
+          <Pagination currentPage={page} totalPages={totalPages} basePath="/admin/all-users" />
+        )}
       </div>
     </DashboardLayout>
   );

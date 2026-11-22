@@ -8,7 +8,7 @@ import { userIdFilter, usersCollection } from "@/lib/users";
  * GET /api/admin/users
  * Lists all users (admin only).
  */
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
     console.log("[AUTH] admin/users GET: unauthenticated request");
@@ -29,7 +29,16 @@ export async function GET() {
     return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
+  const limit = Math.min(
+    Math.max(parseInt(searchParams.get("limit") || "6", 10), 1),
+    100,
+  );
+  const skip = (page - 1) * limit;
+
   let users;
+  let total = 0;
   try {
     users = await usersCollection()
       .find(
@@ -37,13 +46,23 @@ export async function GET() {
         { projection: { name: 1, email: 1, roles: 1, activeRole: 1, createdAt: 1 } },
       )
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .toArray();
+
+    total = await usersCollection().countDocuments({});
   } catch (error) {
     console.error("[AUTH] admin/users GET: DB error", error);
     return NextResponse.json({ error: "Failed to load users" }, { status: 500 });
   }
 
-  return NextResponse.json({ users });
+  return NextResponse.json({
+    users,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  });
 }
 
 /**
