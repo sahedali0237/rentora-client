@@ -14,7 +14,8 @@ export const metadata: Metadata = { title: "All Equipment" };
 type EquipmentRow = {
   name: string;
   category: string;
-  price: string;
+  price: number;
+  rentalType: string;
   status: string;
   owner: string;
   id: string;
@@ -43,7 +44,8 @@ export default async function AllEquipmentPage({ searchParams }: AllEquipmentPag
       equipment = items.map((e: ApiEquipment) => ({
         name: e.name || "Untitled",
         category: e.category || "Uncategorized",
-        price: `$${e.price || 0}`,
+        price: Number(e.rentalPrice || 0),
+        rentalType: e.rentalType || "Daily",
         status: e.status || "pending",
         owner: e.ownerName || "Unknown",
         id: e._id || e.id || "",
@@ -71,6 +73,21 @@ export default async function AllEquipmentPage({ searchParams }: AllEquipmentPag
     rejected: "destructive",
   };
 
+  const periodLabel = (rentalType: string): string => {
+    switch (rentalType) {
+      case "Daily":
+        return "day";
+      case "Weekly":
+        return "week";
+      case "Monthly":
+        return "month";
+      case "Hourly":
+        return "hour";
+      default:
+        return (rentalType || "Daily").toLowerCase() || "day";
+    }
+  };
+
   return (
     <DashboardLayout role={role} userName={session.user.name} userEmail={session.user.email}>
       <div className="space-y-6">
@@ -90,6 +107,10 @@ export default async function AllEquipmentPage({ searchParams }: AllEquipmentPag
             if (key === "status") {
               const variant = statusVariants[value as string] || "secondary";
               return <Badge variant={variant} className="capitalize"><span>{String(value)}</span></Badge>;
+            }
+            if (key === "price") {
+              const r = row as unknown as EquipmentRow;
+              return `$${Number(value || 0)} / ${periodLabel(r.rentalType)}`;
             }
             if (key === "action") {
               const e = row as unknown as EquipmentRow;

@@ -23,7 +23,7 @@ const footerLinks = {
   ],
   Support: [
     { name: "Contact Us", href: "/contact" },
-    { name: "Help Center", href: "/help" },
+    { name: "Help Center", href: "/contact" },
     { name: "Privacy Policy", href: "/privacy" },
     { name: "Terms & Conditions", href: "/terms" },
   ],

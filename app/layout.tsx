@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -28,9 +27,25 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head />
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function () {
+  try {
+    var theme = localStorage.getItem("theme");
+    var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (theme === "dark" || (!theme && prefersDark)) {
+      document.documentElement.classList.add("dark");
+    }
+  } catch (e) {
+    // storage or media-query access may fail (e.g. private mode);
+    // in that case just leave the page in its default light theme.
+  }
+})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
-        <Script src="/theme-init.js" strategy="beforeInteractive" />
         <Navbar />
         <main>{children}</main>
         <Footer />
