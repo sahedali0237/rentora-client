@@ -34,6 +34,7 @@ export default async function AllUsersPage({ searchParams }: AllUsersPageProps) 
 
   let users: UserRow[] = [];
   let totalPages = 1;
+  let apiError: string | null = null;
   try {
     const res = await apiFetch(`/api/admin/users?page=${page}&limit=${limit}`);
     const data = await res.json().catch(() => null);
@@ -48,10 +49,16 @@ export default async function AllUsersPage({ searchParams }: AllUsersPageProps) 
       }));
       totalPages = data.totalPages ?? 1;
     } else if (data && !res.ok) {
-      console.error("[AllUsersPage] /api/admin/users failed:", res.status, res.statusText, data);
+      apiError = `/api/admin/users failed: ${res.status} ${res.statusText}`;
+      console.error("[AllUsersPage]", apiError, { body: data });
     }
   } catch (error) {
-    console.error("[AllUsersPage] /api/admin/users fetch error:", error);
+    apiError = `/api/admin/users fetch error: ${error}`;
+    console.error("[AllUsersPage]", apiError);
+  }
+
+  if (apiError) {
+    console.warn("[AllUsersPage] Pagination disabled due to API error:", apiError);
   }
 
   const columns = [

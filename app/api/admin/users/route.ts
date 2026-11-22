@@ -56,6 +56,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to load users" }, { status: 500 });
   }
 
+  console.log("ADMIN USERS PAGINATION", {
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit),
+  });
+
   return NextResponse.json({
     users,
     total,
