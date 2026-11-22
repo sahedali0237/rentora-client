@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import type { PropsWithChildren } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -20,15 +22,21 @@ export const metadata: Metadata = {
   description: "Equipment Rental Platform",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: PropsWithChildren) {
   return (
     <html
       lang="en"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        <script
+      <body className="min-h-full flex flex-col">
+        <Navbar />
+        <main>{children}</main>
+        <Footer />
+        <ToastContainer />
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `(function () {
   try {
@@ -44,12 +52,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 })();`,
           }}
         />
-      </head>
-      <body className="min-h-full flex flex-col">
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
-        <ToastContainer />
       </body>
     </html>
   );

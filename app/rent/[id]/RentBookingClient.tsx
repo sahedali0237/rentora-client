@@ -11,6 +11,8 @@ interface BookingForm {
   startDate: string;
   endDate: string;
   quantity: string;
+  contactNumber: string;
+  deliveryAddress: string;
   notes: string;
 }
 
@@ -31,12 +33,28 @@ export default function RentBookingClient() {
     startDate: "",
     endDate: "",
     quantity: "1",
+    contactNumber: "",
+    deliveryAddress: "",
     notes: "",
   });
+
+  const prefilledRef = useRef(false);
 
   useEffect(() => {
     fetchEquipment();
   }, [equipmentId]);
+
+  // Prefill the contact number from the logged-in user's profile phone so
+  // returning renters don't have to retype it. Runs once the session loads.
+  useEffect(() => {
+    if (prefilledRef.current) return;
+    const phone =
+      (session?.user as unknown as { phone?: string })?.phone ?? undefined;
+    if (typeof phone === "string" && phone.trim()) {
+      prefilledRef.current = true;
+      setForm((prev) => ({ ...prev, contactNumber: phone.trim() }));
+    }
+  }, [session]);
 
   // Earliest allowed start date is today
   const todayStr = new Date().toISOString().split("T")[0];
@@ -84,6 +102,23 @@ export default function RentBookingClient() {
       return;
     }
 
+    // Contact number: required, Bangladesh format (01XXXXXXXXX / +8801...).
+    const contact = form.contactNumber.trim();
+    if (!contact) {
+      toast.error("Please enter your contact number.");
+      return;
+    }
+    const normalized = contact.replace(/[\s()+-]/g, "").replace(/^880/, "0");
+    if (!/^01\d{9}$/.test(normalized)) {
+      toast.error("Please enter a valid Bangladesh phone number (e.g. 01XXXXXXXXX).");
+      return;
+    }
+
+    const address = form.deliveryAddress.trim();
+    if (!address) {
+      toast.error("Please enter a delivery address.");
+      return;
+    }
     // Guard against a stale/invalid route param: the booking is keyed by
     // this id, so it must be non-empty before we submit.
     if (!equipmentId) {
@@ -120,6 +155,10 @@ export default function RentBookingClient() {
           equipmentId,
           startDate: form.startDate,
           endDate: form.endDate,
+          quantity: form.quantity,
+          contactNumber: contact,
+          deliveryAddress: address,
+          notes: form.notes.trim() || undefined,
         }),
       });
 
@@ -313,6 +352,34 @@ export default function RentBookingClient() {
                     {session?.user?.name || "Logged-in user"}
                   </p>
                 </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+                    Contact Number *
+                  </label>
+                  <input
+                    type="tel"
+                    value={form.contactNumber}
+                    onChange={(e) => setForm({ ...form, contactNumber: e.target.value })}
+                    placeholder="01XXXXXXXXX"
+                    required
+                    className="w-full h-10 px-3.5 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+                  Delivery Address *
+                </label>
+                <input
+                  type="text"
+                  value={form.deliveryAddress}
+                  onChange={(e) => setForm({ ...form, deliveryAddress: e.target.value })}
+                  placeholder="Street, area, city"
+                  required
+                  className="w-full h-10 px-3.5 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+                />
               </div>
 
               <div className="space-y-2">

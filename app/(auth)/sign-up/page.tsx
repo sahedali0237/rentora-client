@@ -13,6 +13,19 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Password rules: at least one uppercase, at least one lowercase, min 6 chars.
+  const PASSWORD_RULES = [
+    { pattern: /[A-Z]/, label: "at least one uppercase letter" },
+    { pattern: /[a-z]/, label: "at least one lowercase letter" },
+    { pattern: /.{6,}/, label: "minimum 6 characters" },
+  ];
+
+  function validatePassword(password: string): string | null {
+    const failed = PASSWORD_RULES.filter((r) => !r.pattern.test(password));
+    if (failed.length === 0) return null;
+    return "Password must contain " + failed.map((r) => r.label).join(", ") + ".";
+  }
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -20,6 +33,7 @@ export default function SignUpPage() {
     const formData = new FormData(e.currentTarget as HTMLFormElement);
     const name = (formData.get("name") as string).trim();
     const email = (formData.get("email") as string).trim();
+    const photo = (formData.get("photo") as string).trim();
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
 
@@ -33,8 +47,9 @@ export default function SignUpPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -45,6 +60,7 @@ export default function SignUpPage() {
         email,
         password,
         name,
+        ...(photo ? { image: photo } : {}),
       });
 
       if (signUpError) {
@@ -146,6 +162,19 @@ export default function SignUpPage() {
             className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
             required
             autoComplete="email"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-zinc-300" htmlFor="photo">
+            Photo (image link)
+          </label>
+          <input
+            id="photo"
+            name="photo"
+            type="url"
+            placeholder="https://example.com/photo.jpg (optional)"
+            className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
           />
         </div>
 

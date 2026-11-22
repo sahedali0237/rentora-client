@@ -112,7 +112,12 @@ export async function POST(request: Request) {
     { id: session.user.id, email: session.user.email, activeRole, roles },
   );
 
-  if (activeRole !== "renter" || !roles.includes("renter")) {
+  // Gate on the *effective* role only — the same rule the owner-side
+  // booking endpoints use. A dual-role account (e.g. renter + owner, or an
+  // admin also holding renter) may have activeRole "owner"/"admin" while
+  // still carrying the "renter" role; those users are booking as renters,
+  // so `roles.includes("renter")` alone is sufficient.
+  if (!roles.includes("renter")) {
     return NextResponse.json({ error: "Renter access required" }, { status: 403 });
   }
 
@@ -156,6 +161,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "End date must be after start date" }, { status: 400 });
   }
 
+  // Contact number is required so the owner can reach the renter; accept the
+  // common Bangladesh formats (01XXXXXXXXX / +8801XXXXXXXXX) and store it
+  // normalized to 01XXXXXXXXX.
+  const rawContact =
+    typeof data.contactNumber === "string" ? data.contactNumber.trim() : "";
+  if (!rawContact) {
+    return NextResponse.json(
+      { error: "Contact number is required" },
+      { status: 400 },
+    );
+  }
+  const normalizedContact = rawContact.replace(/[\s()+-]/g, "").replace(/^880/, "0");
+  if (!/^01\d{9}$/.test(normalizedContact)) {
+    return NextResponse.json(
+      { error: "Invalid contact number (expected Bangladesh format, e.g. 01XXXXXXXXX)" },
+      { status: 400 },
+    );
+  }
+
+  const deliveryAddress =
+    typeof data.deliveryAddress === "string" ? data.deliveryAddress.trim() : "";
+  if (!deliveryAddress) {
+    return NextResponse.json(
+      { error: "Delivery address is required" },
+      { status: 400 },
+    );
+  }
+
   // Price/name/image are always sourced from the equipment document so the
   // client can never set the amount. Newer records carry totalPrice plus
   // populated equipmentName/equipmentImage; older ones only carry amount.
@@ -173,6 +206,8 @@ export async function POST(request: Request) {
   const doc = {
     ...data,
     equipmentId,
+    contactNumber: normalizedContact,
+    deliveryAddress,
     equipmentName:
       typeof equipment.name === "string" ? equipment.name : undefined,
     equipmentImage:

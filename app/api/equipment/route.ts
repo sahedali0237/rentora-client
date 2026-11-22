@@ -318,7 +318,8 @@ export async function DELETE(request: Request) {
     !!userId &&
     (doc.ownerId === userId ||
       doc.ownerId?.toString() === userId.toString() ||
-      userIdFilter(doc.ownerId as string) === userIdFilter(userId));
+      userIdFilter(doc.ownerId as string)?.toString() ===
+        userIdFilter(userId)?.toString());
 
   if (!isAdmin && !isOwner) {
     return NextResponse.json(

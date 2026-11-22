@@ -8,6 +8,7 @@ import { resolveCanonicalUserId } from "@/lib/users";
 import { DeleteButton } from "@/components/equipment-delete-button";
 import type { ApiEquipment, ApiReview, ApiReviewStats } from "@/lib/api-types";
 import { ReviewList } from "@/components/reviews";
+import { FavoriteButton } from "@/components/favorite-button";
 
 export const instant = false;
 
@@ -30,7 +31,19 @@ export default async function EquipmentDetailsPage({
   let reviews: ApiReview[] = [];
   let stats: ApiReviewStats = { averageRating: 0, totalReviews: 0 };
 
-  if (equipRes.ok) {
+  // Call notFound() only when the backend truly reports "not found" (404).
+  // Any other failure (5xx, network, ...) is re-thrown so the error boundary
+  // shows the problem instead of hiding it behind a misleading 404 page.
+  if (equipRes.status === 404) {
+    notFound();
+  }
+  if (!equipRes.ok) {
+    throw new Error(
+      `Failed to load equipment: ${equipRes.status} ${equipRes.statusText}`,
+    );
+  }
+
+  {
     const data = await equipRes.json();
     equipment = data.equipment || data;
   }
@@ -41,6 +54,8 @@ export default async function EquipmentDetailsPage({
     stats = data.stats || { averageRating: 0, totalReviews: 0 };
   }
 
+  // The listing exists but the API refused to return it to this viewer
+  // (e.g. pending/rejected and the viewer is neither owner nor admin).
   if (!equipment) {
     notFound();
   }
@@ -205,6 +220,7 @@ export default async function EquipmentDetailsPage({
               </>
             ) : (
               <>
+                <FavoriteButton equipmentId={equipment._id || equipment.id || ""} />
                 <RentNowButton
                   equipment={equipment}
                   currentUserId={currentUserId}

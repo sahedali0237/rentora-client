@@ -29,6 +29,12 @@ function toAbsoluteUrl(input: string, requestHeaders: Headers): string {
  * Fetch from a same-origin Next.js API route, forwarding the incoming
  * request's cookies so server-side auth checks (BetterAuth sessions)
  * work correctly.
+ *
+ * The result is cached with React's `cache()`, so within one request each
+ * unique URL is fetched at most once. Note that a 404 response is a valid,
+ * cacheable value: if two server components fetch the same 404 URL in one
+ * request, the second call receives the cached 404 instead of a fresh
+ * error — so callers must handle `!res.ok` without throwing.
  */
 export const apiFetch = cache(async (
   input: string,
