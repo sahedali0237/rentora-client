@@ -6,17 +6,14 @@ import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
 import type { ApiBooking, ApiEquipment } from "@/lib/api-types";
 import { EarningsChart } from "@/components/earnings-chart";
+import { DashboardSkeleton } from "@/components/dashboard-skeleton";
 
 // Cache Components: the signed-in check uses headers()/sessions, so this
 // segment must be a blocking route.
 export const instant = false;
 
 function OwnerDashboardSkeleton() {
-  return (
-    <div className="flex min-h-[50vh] items-center justify-center">
-      <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
-    </div>
-  );
+  return <DashboardSkeleton />;
 }
 
 export default function OwnerDashboardPage() {

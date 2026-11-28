@@ -1,9 +1,11 @@
+import { Suspense } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { StatCard } from "@/components/stat-card";
 import { PackageSearch, CreditCard, Star, Truck, Clock } from "lucide-react";
 import { getSession, getActiveRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api-fetch";
 import type { ApiBooking } from "@/lib/api-types";
+import { DashboardSkeleton } from "@/components/dashboard-skeleton";
 
 export const instant = false;
 
@@ -28,7 +30,19 @@ async function getRenterStats(userId: string) {
   return { totalRentals, activeRentals, completedRentals, totalSpent };
 }
 
-export default async function RenterDashboardPage() {
+function RenterDashboardSkeleton() {
+  return <DashboardSkeleton />;
+}
+
+export default function RenterDashboardPage() {
+  return (
+    <Suspense fallback={<RenterDashboardSkeleton />}>
+      <RenterDashboardContent />
+    </Suspense>
+  );
+}
+
+async function RenterDashboardContent() {
   const session = await getSession();
   if (!session) return null;
 

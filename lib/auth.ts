@@ -3,9 +3,15 @@ import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
 const globalForMongo = globalThis as unknown as { _mongoClient?: MongoClient };
+const mongoUri = process.env.MONGODB_URI;
+if (!mongoUri || !/^mongodb(\+srv)?:\/\//.test(mongoUri)) {
+  throw new Error(
+    "MONGODB_URI is missing or invalid. Check .env.local",
+  );
+}
 const client =
   globalForMongo._mongoClient ??
-  new MongoClient(process.env.MONGODB_URI as string, {
+  new MongoClient(mongoUri, {
     maxPoolSize: 10,
     serverSelectionTimeoutMS: 5000,
     connectTimeoutMS: 5000,
